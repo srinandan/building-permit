@@ -5,3 +5,5 @@ dist/
 .DS_Store
 .venv/
 api-server
+__pycache__/
+*.db

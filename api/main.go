@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +16,9 @@ import (
 )
 
 func main() {
+	// Initialize SQLite Database
+	InitDB()
+
 	r := gin.Default()
 
 	// Setup CORS to allow our frontend to make requests
@@ -108,8 +112,54 @@ func main() {
 		}
 
 		// Pass the agent's response back to the client directly
+		// Parse the agent response to get the status
+		var agentResult struct {
+			Status string `json:"status"`
+		}
+
+		err = json.Unmarshal(agentResponse, &agentResult)
+		analysisStatus := "Analysis Complete" // Default
+		if err == nil && agentResult.Status != "" {
+			analysisStatus = agentResult.Status
+		}
+
+		// Note: At this point we don't have a Permit ID directly from the multipart form
+		// Let's assume the client passes `permit_id` in the form
+		permitIDStr := c.PostForm("permit_id")
+
+		// If permit_id is provided, save it to the database
+		if permitIDStr != "" {
+			var permit Permit
+			if err := DB.First(&permit, permitIDStr).Error; err == nil {
+				// Create a new submission history record
+				submission := PermitSubmission{
+					PermitID:       permit.ID,
+					FileName:       file.Filename,
+					AnalysisStatus: analysisStatus,
+					ReportJSON:     string(agentResponse),
+				}
+				DB.Create(&submission)
+
+				// Update Permit status to reflect the latest analysis
+				permit.Status = analysisStatus
+				DB.Save(&permit)
+			}
+		}
+
+		// Pass the agent's response back to the client directly
 		c.Data(resp.StatusCode, "application/json", agentResponse)
 	})
+
+	// Add the new API routes
+	api := r.Group("/api")
+	{
+		api.POST("/login", LoginHandler)
+		api.GET("/users/:id/properties", GetUserPropertiesHandler)
+		api.POST("/users/:id/properties", CreateUserPropertyHandler)
+		api.GET("/properties/:id/permits", GetPropertyPermitsHandler)
+		api.POST("/properties/:id/permits", CreatePropertyPermitHandler)
+		api.GET("/permits/:id", GetPermitHandler)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
