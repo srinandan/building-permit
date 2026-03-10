@@ -73,8 +73,9 @@ class AIService:
 
             # Extract text from retrieved chunks
             context = ""
-            for context_item in response.contexts:
-                 context += context_item.text + "\n\n"
+            if hasattr(response, "contexts") and hasattr(response.contexts, "contexts"):
+                for context_item in response.contexts.contexts:
+                     context += context_item.text + "\n\n"
             return context
         except Exception as e:
              logger.error(f"Failed to retrieve context from RAG: {e}")
