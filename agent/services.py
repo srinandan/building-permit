@@ -19,6 +19,7 @@ class AIService:
         self.project_id = os.getenv("GCP_PROJECT_ID")
         self.location = os.getenv("GCP_LOCATION", "us-central1")
         self.docai_processor_id = os.getenv("DOCUMENT_AI_PROCESSOR_ID")
+        self.docai_location = os.getenv("DOCUMENT_AI_LOCATION", "us")
         self.rag_corpus_name = os.getenv("VERTEX_RAG_CORPUS_NAME")
         self.model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-pro")
 
@@ -38,8 +39,11 @@ class AIService:
             logger.warning("Document AI not configured. Returning empty text.")
             return ""
 
-        client = documentai.DocumentProcessorServiceClient()
-        name = client.processor_path(self.project_id, self.location, self.docai_processor_id)
+        # For Document AI, we need to specify the api_endpoint if it's not the global default
+        client_options = {"api_endpoint": f"{self.docai_location}-documentai.googleapis.com"}
+        client = documentai.DocumentProcessorServiceClient(client_options=client_options)
+
+        name = client.processor_path(self.project_id, self.docai_location, self.docai_processor_id)
 
         raw_document = documentai.RawDocument(
             content=pdf_bytes,
