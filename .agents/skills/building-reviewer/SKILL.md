@@ -1,0 +1,66 @@
+---
+name: building-reviewer
+description: AI system to automate the review of building plans against regulatory frameworks.
+license: Apache-2.0
+---
+
+# Building Plan Compliance Checker: System Skills & Capabilities
+
+This repository implements an agentic AI system designed to automate the review of building plans against complex regulatory frameworks. Below is a detailed breakdown of the technical and functional skills embedded in this project.
+
+## 1. Core AI & Analysis Skills
+
+### Multimodal Document Understanding
+- **PDF Analysis:** Capability to process complex architectural drawings and text directly using Gemini 1.5 Pro.
+- **Structural Extraction:** Uses Google Cloud Document AI to perform high-fidelity OCR and layout analysis on building plans.
+- **Visual Verification:** Ability to "see" and interpret diagrams, symbols, and annotations in blueprints to verify spatial requirements (e.g., clearance, dimensions).
+
+### Regulatory Reasoning (RAG)
+- **Contextual Retrieval:** Employs Vertex AI RAG Engine to retrieve relevant sections from the California Building Standards Code (Title 24) and Santa Clara County local reach codes.
+- **Compliance Mapping:** Matches extracted plan data against retrieved regulatory text to identify specific violations or approved elements.
+- **Actionable Feedback:** Generates structured reports that include exact code sections, detailed descriptions of non-compliance, and specific suggestions for remediation.
+
+---
+
+## 2. Technical Stack & Infrastructure Skills
+
+### Microservices Architecture
+- **Polyglot Development:** Seamless integration between a Go-based API Gateway, a Python-based AI Agent, and a React-based Frontend.
+- **Orchestration:** The Go backend manages business logic, user state (SQLite/GORM), and acts as a secure proxy to the AI analysis engine.
+
+### Cloud Native Integrations
+- **Google Cloud Platform (GCP):** Deep integration with Vertex AI, Document AI, and Cloud Trace.
+- **Observability:** Built-in distributed tracing using OpenTelemetry (Go & Python) for monitoring analysis latency and debugging AI pipelines.
+- **Scalability:** Containerized workloads (Dockerfiles included) ready for deployment to Cloud Run or GKE.
+
+---
+
+## 3. Domain Knowledge: Building Compliance
+
+### Regulatory Frameworks
+- **CA Title 24 (California Building Standards Code):** Expertise in Parts 6 (Energy) and 11 (CalGreen).
+- **Local Reach Codes:** Specialized knowledge of Santa Clara County requirements, including All-Electric building mandates and EV charging infrastructure.
+
+### Architectural Standards
+- **Plan Interpretation:** Understanding of standard architectural scales, legends, and sheet types (Site Plans, Floor Plans, MEP).
+
+---
+
+## 4. Developer & Operational Skills
+
+### Automated Workflows
+- **Standardized Tooling:** Comprehensive `Makefile` for unified management across services (start, build, test).
+- **Package Management:** Uses modern dependency managers: `uv` for Python, `npm` for Frontend, and `go mod` for the API.
+- **CI/CD Ready:** Includes GitHub Actions for CodeQL security scanning.
+
+### Security & Standards
+- **Standard Operating Procedures:** Adheres to security best practices for handling user-uploaded PDFs and GCP service credentials.
+- **Clean Code:** TypeScript for type-safe frontend development and GORM for robust database interactions.
+
+---
+
+## 5. Usage Skills (What you can do)
+1. **Automated Triage:** Upload a PDF and get an "Approved/Rejected" status in seconds.
+2. **Issue Tracking:** View a list of specific violations mapped to the legal code.
+3. **History Management:** Maintain a database of property permits and multiple submission versions.
+4. **Local Development:** Spin up the entire stack locally for testing and customization.

@@ -1,4 +1,4 @@
-# Santa Clara County Building Plan Compliance Checker
+# Building Plan Compliance Checker
 
 An Agentic application to review building plans against the California Building Standards Code and Santa Clara County reach codes.
 
@@ -80,3 +80,15 @@ make start
 3. The frontend will send the PDF to the Go API, which forwards it to the Python Agent.
 4. The Python Agent will extract text using Document AI, query the RAG engine for relevant codes, and use Gemini to generate a compliance report.
 5. The UI will display the results, including specific code violations and suggestions.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to contribute to this project.
+
+## Support
+
+This demo is *NOT* endorsed by Google or Google Cloud. The repo is intended for educational/hobbyists use only.
+
+## License
+
+This project is licensed under the terms of the [LICENSE.txt](./LICENSE.txt) file.
