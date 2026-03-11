@@ -1,0 +1,12 @@
+api-server
+building_plans.db
+data/
+.env
+.DS_Store
+*.log
+.git
+.github
+.agents
+.cloudbuild
+Makefile
+README.md
