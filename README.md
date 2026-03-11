@@ -99,4 +99,4 @@ This demo is *NOT* endorsed by Google or Google Cloud. The repo is intended for 
 
 ## License
 
-This project is licensed under the terms of the [LICENSE.txt](./LICENSE.txt) file.
+This project is licensed under the terms of the [LICENSE](./LICENSE) file.
