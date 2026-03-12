@@ -53,6 +53,38 @@ class ComplianceReport(BaseModel):
     violations: List[Violation]
     approved_elements: List[str]
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    permit_id: Optional[str] = None
+    violation: Optional[Violation] = None
+
+class ChatChoice(BaseModel):
+    message: ChatMessage
+
+class ChatResponse(BaseModel):
+    choices: List[ChatChoice]
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    try:
+        response_text = await ai_service.chat_about_violation(request)
+        return ChatResponse(
+            choices=[
+                ChatChoice(
+                    message=ChatMessage(
+                        role="assistant",
+                        content=response_text
+                    )
+                )
+            ]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/analyze", response_model=ComplianceReport)
 async def analyze_plan(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):

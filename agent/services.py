@@ -235,6 +235,85 @@ class AIService:
              logger.error(f"Error during Gemini analysis: {e}")
              return self._get_mock_response()
 
+    async def chat_about_violation(self, request: Any) -> str:
+        """Handle chat interactions about a specific violation."""
+        if not self.project_id:
+            logger.warning("GCP Project ID not configured. Using fallback chat response.")
+            return "This is a mock response. Please configure GCP Project ID to use the agent."
+
+        try:
+            # We don't use VertexAiMemoryBankService's full memory logic here directly,
+            # because the frontend will send the conversation history in `request.messages`.
+            # We construct a prompt with context and pass it to the agent.
+
+            system_instruction = """
+            You are a helpful assistant specialized in building codes for Santa Clara County.
+            You are helping a user understand a specific building plan violation and how to fix it.
+            """
+
+            context = ""
+            if request.permit_id:
+                context += f"Permit ID: {request.permit_id}\n"
+            if request.violation:
+                context += f"Violation Section: {request.violation.section}\n"
+                context += f"Description: {request.violation.description}\n"
+                context += f"Suggestion: {request.violation.suggestion}\n"
+
+            if context:
+                system_instruction += f"\nContext regarding the violation:\n{context}\n"
+
+            agent = LlmAgent(
+                name="chat_analyzer",
+                model=self.model_name,
+                instruction=system_instruction
+            )
+
+            agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
+            session_service = VertexAiSessionService(self.project_id, self.location, agent_engine_id=agent_engine_id)
+
+            runner = Runner(
+                app_name=self.reasoning_engine_app_name or "default-app",
+                agent=agent,
+                session_service=session_service,
+                memory_service=VertexAiMemoryBankService(agent_engine_id=agent_engine_id)
+            )
+
+            # Build the conversation history
+            # The last message is the new user input
+            new_user_message_text = request.messages[-1].content if request.messages else ""
+
+            # Use a session based on permit ID, or a default session if none provided
+            session_id_suffix = f"-{request.permit_id}" if request.permit_id else "-chat"
+            session = await session_service.create_session(app_name=self.reasoning_engine_app_name or "default-app", user_id="default_user")
+
+            # Just passing the last user message as new_message and trusting ADK memory / context.
+            # However, for simplicity and adherence to standard OpenAI payload:
+            history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in request.messages[:-1]])
+            if history_text:
+                new_user_message_text = f"Previous conversation:\n{history_text}\n\nNew message:\n{new_user_message_text}"
+
+            new_message = Content(
+                 role="user",
+                 parts=[Part(text=new_user_message_text)]
+            )
+
+            final_text = ""
+            async for event in runner.run_async(user_id="default_user", session_id=session.id, new_message=new_message):
+                 if hasattr(event, 'text') and event.text:
+                     final_text += event.text
+                 elif isinstance(event, str):
+                     final_text += event
+                 elif hasattr(event, 'content') and event.content and event.content.parts:
+                     for part in event.content.parts:
+                         if part.text:
+                            final_text += part.text
+
+            return final_text.strip() if final_text else "I am sorry, I couldn't generate a response."
+
+        except Exception as e:
+             logger.error(f"Error during Gemini chat: {e}")
+             return f"Error communicating with agent: {str(e)}"
+
     def _get_mock_response(self) -> Dict[str, Any]:
          return {
             "status": "Changes Suggested",

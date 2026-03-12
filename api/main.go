@@ -23,6 +23,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"context"
@@ -263,6 +264,55 @@ func initTracer() (*sdktrace.TracerProvider, error) {
 	return tp, nil
 }
 
+func ChatHandler(c *gin.Context) {
+	agentURL := os.Getenv("AGENT_URL")
+	if agentURL == "" {
+		agentURL = "http://127.0.0.1:8000/analyze" // default local Python agent URL
+	}
+
+	// Convert /analyze to /chat
+	if strings.HasSuffix(agentURL, "/analyze") {
+		agentURL = strings.TrimSuffix(agentURL, "/analyze") + "/chat"
+	} else if !strings.HasSuffix(agentURL, "/chat") {
+		agentURL = agentURL + "/chat"
+	}
+
+	// Read the raw JSON payload from the request
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	// Forward the JSON payload to the Python agent
+	req, err := http.NewRequest("POST", agentURL, bytes.NewBuffer(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error calling agent chat endpoint: %v", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response from the agent
+	agentResponse, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read agent response"})
+		return
+	}
+
+	// Forward the agent's response back to the client
+	c.Data(resp.StatusCode, "application/json", agentResponse)
+}
+
 // --- Main API Entrypoint ---
 
 func main() {
@@ -424,6 +474,7 @@ func main() {
 		api.POST("/properties/:id/permits", CreatePropertyPermitHandler)
 		api.GET("/permits/:id", GetPermitHandler)
 		api.DELETE("/permits/:id", DeletePermitHandler)
+		api.POST("/chat", ChatHandler)
 	}
 
 	port := os.Getenv("PORT")
