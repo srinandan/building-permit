@@ -181,11 +181,11 @@ class AIService:
              )
 
              # Use existing session or create a new one
-             existing_sessions = await session_service.list_sessions(app_name=self.reasoning_engine_app_name, user_id="default_user")
+             list_sessions_response = await session_service.list_sessions(app_name=self.reasoning_engine_app_name, user_id="default_user")
 
-             if existing_sessions:
+             if list_sessions_response.sessions:
                  # Use the first available session
-                 session = existing_sessions[0]
+                 session = list_sessions_response.sessions[0]
              else:
                  # Create a new session
                  session = await session_service.create_session(app_name=self.reasoning_engine_app_name, user_id="default_user")
