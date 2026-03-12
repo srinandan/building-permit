@@ -19,8 +19,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -81,5 +85,69 @@ func TestAnalyzePlanNoFile(t *testing.T) {
 	expectedError := `{"error":"No file uploaded"}`
 	if w.Body.String() != expectedError {
 		t.Errorf("Expected error %s but got %s", expectedError, w.Body.String())
+	}
+}
+
+func TestCORSFix(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Set ALLOWED_ORIGINS to control the test environment
+	os.Setenv("ALLOWED_ORIGINS", "http://trusted.com,http://another-trusted.com")
+	defer os.Unsetenv("ALLOWED_ORIGINS")
+
+	// We need to trigger the logic in main() but without starting the server.
+	// Since main() is a bit coupled, let's replicate the logic for testing.
+
+	allowedOrigins := []string{
+		"http://localhost:3000",
+		"http://localhost:5173",
+		"http://127.0.0.1:3000",
+		"http://127.0.0.1:5173",
+	}
+
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+	}
+
+	r := gin.New()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	r.GET("/test", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	tests := []struct {
+		origin  string
+		allowed bool
+	}{
+		{"http://trusted.com", true},
+		{"http://another-trusted.com", true},
+		{"http://malicious.com", false},
+		{"http://localhost:3000", false}, // Overridden by env var in this test
+	}
+
+	for _, tt := range tests {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/test", nil)
+		req.Header.Set("Origin", tt.origin)
+		r.ServeHTTP(w, req)
+
+		got := w.Header().Get("Access-Control-Allow-Origin")
+		if tt.allowed {
+			if got != tt.origin {
+				t.Errorf("Origin %s should be allowed, but got Access-Control-Allow-Origin: %s", tt.origin, got)
+			}
+		} else {
+			if got == tt.origin || got == "*" {
+				t.Errorf("Origin %s should NOT be allowed, but got Access-Control-Allow-Origin: %s", tt.origin, got)
+			}
+		}
 	}
 }

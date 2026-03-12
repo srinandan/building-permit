@@ -337,8 +337,19 @@ func main() {
 	r.Use(otelgin.Middleware("building-plan-api"))
 
 	// Setup CORS to allow our frontend to make requests
+	allowedOrigins := []string{
+		"http://localhost:3000", // Default React local dev port
+		"http://localhost:5173", // Vite default port
+		"http://127.0.0.1:3000",
+		"http://127.0.0.1:5173",
+	}
+
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // in production restrict this to frontend URL
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
