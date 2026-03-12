@@ -67,28 +67,30 @@ class AIService:
         else:
             logger.warning("GOOGLE_CLOUD_PROJECT not set. GCP services will not work.")
 
+        # Initialize Document AI
+        self.docai_client = None
+        self.docai_processor_name = None
+        if self.project_id and self.docai_processor_id:
+            client_options = {"api_endpoint": f"{self.docai_location}-documentai.googleapis.com"}
+            self.docai_client = documentai.DocumentProcessorServiceClient(client_options=client_options)
+            self.docai_processor_name = self.docai_client.processor_path(self.project_id, self.docai_location, self.docai_processor_id)
+
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
         """Use Document AI to extract text from a PDF."""
-        if not self.project_id or not self.docai_processor_id:
+        if not self.docai_client or not self.docai_processor_name:
             logger.warning("Document AI not configured. Returning empty text.")
             return ""
-
-        # For Document AI, we need to specify the api_endpoint if it's not the global default
-        client_options = {"api_endpoint": f"{self.docai_location}-documentai.googleapis.com"}
-        client = documentai.DocumentProcessorServiceClient(client_options=client_options)
-
-        name = client.processor_path(self.project_id, self.docai_location, self.docai_processor_id)
 
         raw_document = documentai.RawDocument(
             content=pdf_bytes,
             mime_type="application/pdf"
         )
         request = documentai.ProcessRequest(
-            name=name,
+            name=self.docai_processor_name,
             raw_document=raw_document
         )
 
-        result = client.process_document(request=request)
+        result = self.docai_client.process_document(request=request)
         document = result.document
         return document.text
 
