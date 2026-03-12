@@ -29,6 +29,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.tools import load_memory
+from contractor_agent import create_contractor_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -262,10 +263,13 @@ class AIService:
             if context:
                 system_instruction += f"\nContext regarding the violation:\n{context}\n"
 
+            contractor_agent = create_contractor_agent(self.model_name)
+
             agent = LlmAgent(
                 name="chat_analyzer",
                 model=self.model_name,
-                instruction=system_instruction
+                instruction=system_instruction,
+                tools=[contractor_agent]
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
@@ -282,9 +286,15 @@ class AIService:
             # The last message is the new user input
             new_user_message_text = request.messages[-1].content if request.messages else ""
 
-            # Use a session based on permit ID, or a default session if none provided
-            session_id_suffix = f"-{request.permit_id}" if request.permit_id else "-chat"
-            session = await session_service.create_session(app_name=self.reasoning_engine_app_name or "default-app", user_id="default_user")
+            # Use existing session or create a new one
+            list_sessions_response = await session_service.list_sessions(app_name=self.reasoning_engine_app_name or "default-app", user_id="default_user")
+
+            if list_sessions_response.sessions:
+                # Use the first available session
+                session = list_sessions_response.sessions[0]
+            else:
+                # Create a new session
+                session = await session_service.create_session(app_name=self.reasoning_engine_app_name or "default-app", user_id="default_user")
 
             # Just passing the last user message as new_message and trusting ADK memory / context.
             # However, for simplicity and adherence to standard OpenAI payload:
@@ -313,6 +323,62 @@ class AIService:
         except Exception as e:
              logger.error(f"Error during Gemini chat: {e}")
              return f"Error communicating with agent: {str(e)}"
+
+    async def chat_with_contractor(self, request: Any) -> str:
+        """Handle chat interactions with the dedicated contractor agent."""
+        if not self.project_id:
+            logger.warning("GCP Project ID not configured. Using fallback chat response.")
+            return "This is a mock response from the contractor agent. Please configure GCP Project ID."
+
+        try:
+            contractor_agent = create_contractor_agent(self.model_name)
+
+            agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
+            session_service = VertexAiSessionService(self.project_id, self.location, agent_engine_id=agent_engine_id)
+
+            runner = Runner(
+                app_name=self.reasoning_engine_app_name or "default-app",
+                agent=contractor_agent,
+                session_service=session_service,
+                memory_service=VertexAiMemoryBankService(agent_engine_id=agent_engine_id)
+            )
+
+            # Use existing session or create a new one, separate prefix for contractor
+            session_id_suffix = f"-contractor-{request.permit_id}" if request.permit_id else "-contractor-chat"
+            list_sessions_response = await session_service.list_sessions(app_name=self.reasoning_engine_app_name or "default-app", user_id="contractor_user")
+
+            if list_sessions_response.sessions:
+                session = list_sessions_response.sessions[0]
+            else:
+                session = await session_service.create_session(app_name=self.reasoning_engine_app_name or "default-app", user_id="contractor_user")
+
+            new_user_message_text = request.messages[-1].content if request.messages else ""
+
+            history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in request.messages[:-1]])
+            if history_text:
+                new_user_message_text = f"Previous conversation:\n{history_text}\n\nNew message:\n{new_user_message_text}"
+
+            new_message = Content(
+                 role="user",
+                 parts=[Part(text=new_user_message_text)]
+            )
+
+            final_text = ""
+            async for event in runner.run_async(user_id="contractor_user", session_id=session.id, new_message=new_message):
+                 if hasattr(event, 'text') and event.text:
+                     final_text += event.text
+                 elif isinstance(event, str):
+                     final_text += event
+                 elif hasattr(event, 'content') and event.content and event.content.parts:
+                     for part in event.content.parts:
+                         if part.text:
+                            final_text += part.text
+
+            return final_text.strip() if final_text else "I am sorry, I couldn't generate a response."
+
+        except Exception as e:
+             logger.error(f"Error during Gemini contractor chat: {e}")
+             return f"Error communicating with contractor agent: {str(e)}"
 
     def _get_mock_response(self) -> Dict[str, Any]:
          return {

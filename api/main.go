@@ -309,6 +309,57 @@ func ChatHandler(c *gin.Context) {
 		return
 	}
 
+	// Return the response back to the client
+	c.Data(resp.StatusCode, "application/json", agentResponse)
+}
+
+func ContractorChatHandler(c *gin.Context) {
+	agentURL := os.Getenv("AGENT_URL")
+	if agentURL == "" {
+		agentURL = "http://127.0.0.1:8000/analyze" // default local Python agent URL
+	}
+
+	// Convert /analyze to /contractor-chat
+	if strings.HasSuffix(agentURL, "/analyze") {
+		agentURL = strings.TrimSuffix(agentURL, "/analyze") + "/contractor-chat"
+	} else if strings.HasSuffix(agentURL, "/chat") {
+		agentURL = strings.TrimSuffix(agentURL, "/chat") + "/contractor-chat"
+	} else if !strings.HasSuffix(agentURL, "/contractor-chat") {
+		agentURL = agentURL + "/contractor-chat"
+	}
+
+	// Read the raw JSON payload from the request
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	// Forward the JSON payload to the Python agent
+	req, err := http.NewRequest("POST", agentURL, bytes.NewBuffer(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error calling agent contractor-chat endpoint: %v", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response from the agent
+	agentResponse, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response from agent"})
+		return
+	}
+
 	// Forward the agent's response back to the client
 	c.Data(resp.StatusCode, "application/json", agentResponse)
 }
@@ -475,6 +526,7 @@ func main() {
 		api.GET("/permits/:id", GetPermitHandler)
 		api.DELETE("/permits/:id", DeletePermitHandler)
 		api.POST("/chat", ChatHandler)
+		api.POST("/contractor-chat", ContractorChatHandler)
 	}
 
 	port := os.Getenv("PORT")

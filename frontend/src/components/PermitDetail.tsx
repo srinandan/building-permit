@@ -155,6 +155,11 @@ export function PermitDetail() {
         content: `Hi there! You're asking about the violation for section ${violation.section}. How can I help you?`
       }
     ]);
+
+    // Auto-fill chat input with violation details as requested
+    const formattedViolationText = `I have a question about this violation:\nSection: ${violation.section}\nDescription: ${violation.description}\nSuggestion: ${violation.suggestion}`;
+    setChatInput(formattedViolationText);
+
     setIsChatOpen(true);
   };
 
@@ -353,10 +358,10 @@ export function PermitDetail() {
 
       {/* Chat Side Panel Overlay */}
       {isChatOpen && activeViolation && (
-        <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={closeChat}></div>
+        <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+          {/* Removed the solid background overlay to allow viewing the permit details */}
 
-          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 shadow-2xl">
             <div className="pointer-events-auto w-screen max-w-md transform transition-all">
               <div className="flex h-full flex-col bg-white shadow-xl">
                 {/* Header */}
@@ -413,13 +418,19 @@ export function PermitDetail() {
                 <div className="flex-shrink-0 border-t border-gray-200 px-4 py-4 sm:px-6 bg-white">
                   <form onSubmit={sendChatMessage} className="flex space-x-3">
                     <div className="relative flex-grow">
-                      <input
-                        type="text"
-                        className="block w-full rounded-md border-0 py-2.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                      <textarea
+                        rows={3}
+                        className="block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 resize-none"
                         placeholder="Ask about this violation..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         disabled={chatLoading}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendChatMessage(e as any);
+                          }
+                        }}
                       />
                     </div>
                     <button

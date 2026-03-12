@@ -67,6 +67,17 @@ export function Dashboard() {
 
         if (!isMounted) return;
 
+        // Remove duplicates just in case there are multiple entries for the same address
+        const uniqueProps = [];
+        const seenAddresses = new Set();
+        for (const p of props) {
+            if (!seenAddresses.has(p.address)) {
+                seenAddresses.add(p.address);
+                uniqueProps.push(p);
+            }
+        }
+        props = uniqueProps;
+
         setProperties(props);
         if (!currentProperty && props.length > 0) {
             setCurrentProperty(props[0]);
