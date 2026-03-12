@@ -28,6 +28,7 @@ from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
+from google.adk.tools import load_memory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +134,8 @@ class AIService:
              Analyze the document to identify:
              1. Elements that comply with the codes and are approved.
              2. Elements that violate the codes or need changes. For each violation, specify the exact code section (e.g. "CA Title 24, Part 6, Section 150.0"), describe the issue, and provide a suggestion for fixing it.
+
+             You have access to a tool to search past conversation memories. Use it to refer back to past discussions or previously noted violations if they are relevant to the current analysis.
              """
 
              # You can optionally pass retrieved RAG context here as well:
@@ -140,11 +143,18 @@ class AIService:
              if rag_context:
                  prompt += f"\n\nHere is relevant code context to reference:\n{rag_context}"
 
+             async def auto_save_session_to_memory_callback(callback_context):
+                 await callback_context._invocation_context.memory_service.add_session_to_memory(
+                     callback_context._invocation_context.session
+                 )
+
              agent = LlmAgent(
                  name="plan_analyzer",
                  model=self.model_name,
                  instruction=prompt,
-                 output_schema=PlanAnalysisResponse
+                 tools=[load_memory],
+                 output_schema=PlanAnalysisResponse,
+                 after_agent_callback=auto_save_session_to_memory_callback
              )
 
              # Create runner with Vertex AI Memory and Session Stores
@@ -170,8 +180,15 @@ class AIService:
                  ]
              )
 
-             # create a session
-             session = await session_service.create_session(app_name=self.reasoning_engine_app_name, user_id="default_user")
+             # Use existing session or create a new one
+             existing_sessions = await session_service.list_sessions(app_name=self.reasoning_engine_app_name, user_id="default_user")
+
+             if existing_sessions:
+                 # Use the first available session
+                 session = existing_sessions[0]
+             else:
+                 # Create a new session
+                 session = await session_service.create_session(app_name=self.reasoning_engine_app_name, user_id="default_user")
 
              final_text = ""
              # Run asynchronously
