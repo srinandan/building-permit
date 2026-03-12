@@ -1,4 +1,4 @@
-.PHONY: setup apis sa rag help
+.PHONY: setup apis sa rag agent-engine help
 
 help:
 	@echo "Usage:"
@@ -6,8 +6,9 @@ help:
 	@echo "  make apis    - Enable necessary GCP APIs"
 	@echo "  make sa      - Create service account and assign roles"
 	@echo "  make rag     - Setup RAG engine corpus and upload documents"
+	@echo "  make agent-engine - Deploy the Vertex AI Agent Engine"
 
-setup: apis sa rag
+setup: apis sa rag agent-engine
 
 apis:
 	@echo "Enabling APIs..."
@@ -20,6 +21,10 @@ sa:
 rag:
 	@echo "Setting up RAG Engine..."
 	python3 rag_setup.py
+
+agent-engine:
+	@echo "Deploying Agent Engine..."
+	cd ../agent-engine && make deploy
 
 chmod:
 	chmod +x setup.sh

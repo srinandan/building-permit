@@ -7,7 +7,9 @@ An Agentic application to review building plans against the California Building 
 This is a monorepo containing three microservices:
 1. **Frontend**: React application built with Vite and Tailwind CSS.
 2. **API Gateway**: Go backend using the Gin framework to handle file uploads and orchestrate the AI analysis.
-3. **AI Agent**: Python service using FastAPI, Google Cloud Document AI, Vertex AI RAG Engine, and Gemini.
+3. **AI Agent**: Python service using FastAPI, Google Cloud Document AI, Vertex AI RAG Engine, and Gemini. It leverages **Vertex AI Session** and **MemoryBank** for robust, persistent conversation history.
+4. **Agent Engine**: Vertex AI Agent Engine for deploying and scaling the AI components.
+
 
 ## Prerequisites
 
@@ -32,6 +34,8 @@ This will:
 - Enable necessary APIs (Vertex AI, Document AI, Telemetry, etc.).
 - Create a service account `build-permit-sa` with the required IAM roles.
 - Create a Vertex AI RAG Corpus named `ca-building-codes` in `us-west1` and upload documents from `building-codes/`.
+- Deploys the Vertex AI Agent Engine using the logic in the `agent-engine/` directory.
+
 
 ### 2. Manual Setup (Document AI)
 
