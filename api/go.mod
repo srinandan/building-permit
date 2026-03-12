@@ -1,6 +1,6 @@
 module github.com/scc/building-plan-api
 
-go 1.25.0
+go 1.24.3
 
 require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.31.0
