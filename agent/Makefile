@@ -8,7 +8,7 @@ VERTEX_RAG_CORPUS_NAME=projects/${GOOGLE_CLOUD_PROJECT}/locations/us-west1/ragCo
 REASONING_ENGINE_APP_NAME=projects/${GOOGLE_CLOUD_PROJECT}/locations/${GOOGLE_CLOUD_LOCATION}/reasoningEngines/3166398874436763648
 GEMINI_MODEL_NAME=gemini-2.5-pro
 
-.PHONY: install start build clean
+.PHONY: install start build clean deploy
 
 install:
 	uv sync
@@ -29,3 +29,6 @@ build:
 
 clean:
 	rm -rf .venv
+
+deploy:
+	gcloud builds submit --config .cloudbuild/deploy.yaml --substitutions _COMMIT_SHA=$(shell git rev-parse --short HEAD) .
