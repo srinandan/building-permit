@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Clock, LogOut, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Clock, LogOut, Trash2, MessageSquare, X, Send } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -32,6 +32,14 @@ export function PermitDetail() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeViolation, setActiveViolation] = useState<any>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -98,9 +106,8 @@ export function PermitDetail() {
 
       // Crucial fix: Reset the file input so it correctly updates UI state and allows re-selection
       setFile(null);
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      if (fileInput) {
-          fileInput.value = '';
+      if (fileInputRef.current) {
+          fileInputRef.current.value = '';
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'An error occurred while analyzing the plan.');
@@ -138,6 +145,53 @@ export function PermitDetail() {
         alert("Failed to delete permit");
       }
     }
+  };
+
+  const openChatForViolation = (violation: any) => {
+    setActiveViolation(violation);
+    setChatMessages([
+      {
+        role: "assistant",
+        content: `Hi there! You're asking about the violation for section ${violation.section}. How can I help you?`
+      }
+    ]);
+    setIsChatOpen(true);
+  };
+
+  const sendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !activeViolation) return;
+
+    const userMessage = { role: "user", content: chatInput };
+    const newMessages = [...chatMessages, userMessage];
+
+    setChatMessages(newMessages);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const payload = {
+        messages: newMessages,
+        permit_id: id,
+        violation: activeViolation
+      };
+      const res = await axios.post(`${API_URL}/api/chat`, payload);
+
+      if (res.data && res.data.choices && res.data.choices.length > 0) {
+        const assistantMessage = res.data.choices[0].message;
+        setChatMessages([...newMessages, assistantMessage]);
+      }
+    } catch (err) {
+      console.error("Failed to send chat message", err);
+      setChatMessages([...newMessages, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const closeChat = () => {
+    setIsChatOpen(false);
+    setActiveViolation(null);
   };
 
   if (!permit) return <div className="flex justify-center mt-20"><Loader2 className="animate-spin" /></div>;
@@ -196,7 +250,13 @@ export function PermitDetail() {
                         <div className="flex text-sm text-gray-600 justify-center">
                             <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
                             <span>{file ? file.name : 'Select a PDF file'}</span>
-                            <input type="file" accept=".pdf" className="sr-only" onChange={handleFileChange} />
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                className="sr-only"
+                                onChange={handleFileChange}
+                                ref={fileInputRef}
+                            />
                             </label>
                         </div>
                     </div>
@@ -237,9 +297,16 @@ export function PermitDetail() {
                             {violation.section}
                             </div>
                             <p className="text-gray-800 text-sm font-medium mb-2">{violation.description}</p>
-                            <div className="bg-white bg-opacity-60 rounded p-2 text-xs text-gray-700">
+                            <div className="bg-white bg-opacity-60 rounded p-2 text-xs text-gray-700 mb-2">
                             <strong>Suggestion:</strong> {violation.suggestion}
                             </div>
+                            <button
+                                onClick={() => openChatForViolation(violation)}
+                                className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors"
+                            >
+                                <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                                Ask Agent
+                            </button>
                         </div>
                         ))}
                     </div>
@@ -283,6 +350,94 @@ export function PermitDetail() {
             </div>
         )}
       </main>
+
+      {/* Chat Side Panel Overlay */}
+      {isChatOpen && activeViolation && (
+        <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={closeChat}></div>
+
+          <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div className="pointer-events-auto w-screen max-w-md transform transition-all">
+              <div className="flex h-full flex-col bg-white shadow-xl">
+                {/* Header */}
+                <div className="bg-blue-600 px-4 py-6 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-semibold leading-6 text-white" id="slide-over-title">
+                      Chat with Code Agent
+                    </h2>
+                    <div className="ml-3 flex h-7 items-center">
+                      <button
+                        type="button"
+                        className="relative rounded-md text-blue-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+                        onClick={closeChat}
+                      >
+                        <span className="absolute -inset-2.5" />
+                        <span className="sr-only">Close panel</span>
+                        <X className="h-6 w-6" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-1">
+                    <p className="text-sm text-blue-100 font-mono">
+                      Ref: {activeViolation.section}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Chat Messages */}
+                <div className="relative flex-1 px-4 py-6 sm:px-6 overflow-y-auto bg-gray-50">
+                  <div className="space-y-4">
+                    {chatMessages.map((msg, index) => (
+                      <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`rounded-lg px-4 py-2 max-w-[85%] text-sm ${
+                          msg.role === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-200 text-gray-800 shadow-sm'
+                        }`}>
+                          <div className="whitespace-pre-wrap">{msg.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div className="flex justify-start">
+                        <div className="rounded-lg px-4 py-2 bg-white border border-gray-200 text-gray-500 shadow-sm text-sm flex items-center">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Agent is typing...
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Input Area */}
+                <div className="flex-shrink-0 border-t border-gray-200 px-4 py-4 sm:px-6 bg-white">
+                  <form onSubmit={sendChatMessage} className="flex space-x-3">
+                    <div className="relative flex-grow">
+                      <input
+                        type="text"
+                        className="block w-full rounded-md border-0 py-2.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                        placeholder="Ask about this violation..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        disabled={chatLoading}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim() || chatLoading}
+                      className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                        !chatInput.trim() || chatLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'
+                      }`}
+                    >
+                      <Send className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

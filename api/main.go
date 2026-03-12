@@ -28,6 +28,7 @@ import (
 
 	"context"
 
+	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -35,7 +36,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
-	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -46,23 +46,23 @@ import (
 var DB *gorm.DB
 
 type User struct {
-	ID        uint       `gorm:"primaryKey" json:"id"`
-	Email     string     `gorm:"uniqueIndex" json:"email"`
-	Name      string     `json:"name"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID         uint       `gorm:"primaryKey" json:"id"`
+	Email      string     `gorm:"uniqueIndex" json:"email"`
+	Name       string     `json:"name"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
 	Properties []Property `gorm:"foreignKey:UserID" json:"properties"`
 }
 
 type Property struct {
-	ID        uint       `gorm:"primaryKey" json:"id"`
-	UserID    uint       `json:"user_id"`
-	Address   string     `json:"address"`
-	City      string     `json:"city"`
-	ZipCode   string     `json:"zip_code"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	Permits   []Permit   `gorm:"foreignKey:PropertyID" json:"permits"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `json:"user_id"`
+	Address   string    `json:"address"`
+	City      string    `json:"city"`
+	ZipCode   string    `json:"zip_code"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Permits   []Permit  `gorm:"foreignKey:PropertyID" json:"permits"`
 }
 
 type Permit struct {
@@ -77,12 +77,12 @@ type Permit struct {
 }
 
 type PermitSubmission struct {
-	ID              uint           `gorm:"primaryKey" json:"id"`
-	PermitID        uint           `json:"permit_id"`
-	FileName        string         `json:"file_name"`
-	AnalysisStatus  string         `json:"analysis_status"`
-	ReportJSON      string         `json:"report_json"` // Store the JSON report string
-	CreatedAt       time.Time      `json:"created_at"`
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	PermitID       uint      `json:"permit_id"`
+	FileName       string    `json:"file_name"`
+	AnalysisStatus string    `json:"analysis_status"`
+	ReportJSON     string    `json:"report_json"` // Store the JSON report string
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 func InitDB() {
@@ -107,6 +107,11 @@ func InitDB() {
 
 	DB = db
 	log.Println("Database connection established")
+}
+
+// Shared HTTP client for agent requests
+var agentHTTPClient = &http.Client{
+	Timeout: 60 * time.Second, // Agent analysis can take a while
 }
 
 // --- Handlers ---
@@ -259,6 +264,55 @@ func initTracer() (*sdktrace.TracerProvider, error) {
 	return tp, nil
 }
 
+func ChatHandler(c *gin.Context) {
+	agentURL := os.Getenv("AGENT_URL")
+	if agentURL == "" {
+		agentURL = "http://127.0.0.1:8000/analyze" // default local Python agent URL
+	}
+
+	// Convert /analyze to /chat
+	if strings.HasSuffix(agentURL, "/analyze") {
+		agentURL = strings.TrimSuffix(agentURL, "/analyze") + "/chat"
+	} else if !strings.HasSuffix(agentURL, "/chat") {
+		agentURL = agentURL + "/chat"
+	}
+
+	// Read the raw JSON payload from the request
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	// Forward the JSON payload to the Python agent
+	req, err := http.NewRequest("POST", agentURL, bytes.NewBuffer(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error calling agent chat endpoint: %v", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response from the agent
+	agentResponse, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read agent response"})
+		return
+	}
+
+	// Forward the agent's response back to the client
+	c.Data(resp.StatusCode, "application/json", agentResponse)
+}
+
 // --- Main API Entrypoint ---
 
 func main() {
@@ -367,8 +421,7 @@ func main() {
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 
 		// Execute the request
-		client := &http.Client{Timeout: 60 * time.Second} // Agent analysis can take a while
-		resp, err := client.Do(req)
+		resp, err := agentHTTPClient.Do(req)
 		if err != nil {
 			log.Printf("Error calling agent: %v", err)
 			c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
@@ -432,6 +485,7 @@ func main() {
 		api.POST("/properties/:id/permits", CreatePropertyPermitHandler)
 		api.GET("/permits/:id", GetPermitHandler)
 		api.DELETE("/permits/:id", DeletePermitHandler)
+		api.POST("/chat", ChatHandler)
 	}
 
 	port := os.Getenv("PORT")
