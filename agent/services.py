@@ -29,8 +29,10 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.tools import load_memory
-from google.adk.agents import RemoteA2aAgent
-from google.adk.a2a_clients import OpenAiA2aClient
+from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+
+from a2a.client import ClientConfig, ClientFactory
+from a2a.types import TransportProtocol
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -267,13 +269,14 @@ class AIService:
             # Setup A2A contractor agent call
             contractor_agent_url = os.getenv("CONTRACTOR_AGENT_URL", "http://127.0.0.1:8001")
 
-            def a2a_client_factory():
-                return OpenAiA2aClient(
-                    base_url=f"{contractor_agent_url}/",
-                    api_key="empty",  # No API key required for local/internal calls
-                    model="contractor_agent",
-                    path="chat"
+            client_factory = ClientFactory(
+                ClientConfig(
+                    # Specify supported transport mechanisms
+                    supported_transports=[TransportProtocol.http_json],
+                    # Use client preferences for protocol negotiation
+                    use_client_preference=True,
                 )
+            )
 
             contractor_agent = RemoteA2aAgent(
                 name="contractor_agent",
@@ -281,15 +284,15 @@ class AIService:
                     "An agent that helps find licensed contractors for specific jobs in a given area. "
                     "Use this agent when the user asks for help finding a contractor."
                 ),
-                agent_card="", # Or an actual URL
-                a2a_client_factory=a2a_client_factory,
+                agent_card=f"{contractor_agent_url}/a2a/v1/card",
+                a2a_client_factory=client_factory,
             )
 
             agent = LlmAgent(
                 name="chat_analyzer",
                 model=self.model_name,
                 instruction=system_instruction,
-                tools=[contractor_agent.as_tool()]
+                sub_agents=[contractor_agent]
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
