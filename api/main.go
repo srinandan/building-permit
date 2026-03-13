@@ -314,18 +314,13 @@ func ChatHandler(c *gin.Context) {
 }
 
 func ContractorChatHandler(c *gin.Context) {
-	agentURL := os.Getenv("AGENT_URL")
+	agentURL := os.Getenv("CONTRACTOR_AGENT_URL")
 	if agentURL == "" {
-		agentURL = "http://127.0.0.1:8000/analyze" // default local Python agent URL
-	}
-
-	// Convert /analyze to /contractor-chat
-	if strings.HasSuffix(agentURL, "/analyze") {
-		agentURL = strings.TrimSuffix(agentURL, "/analyze") + "/contractor-chat"
-	} else if strings.HasSuffix(agentURL, "/chat") {
-		agentURL = strings.TrimSuffix(agentURL, "/chat") + "/contractor-chat"
-	} else if !strings.HasSuffix(agentURL, "/contractor-chat") {
-		agentURL = agentURL + "/contractor-chat"
+		agentURL = "http://127.0.0.1:8001/chat" // default local contractor agent URL
+	} else {
+		if !strings.HasSuffix(agentURL, "/chat") {
+			agentURL = strings.TrimSuffix(agentURL, "/") + "/chat"
+		}
 	}
 
 	// Read the raw JSON payload from the request
