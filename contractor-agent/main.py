@@ -14,138 +14,96 @@
 
 import os
 import logging
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-from dotenv import load_dotenv
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-import vertexai
-from google.genai.types import Part, Content
-from google.adk.agents import LlmAgent
+import google.auth
+from a2a.server.apps import A2AFastAPIApplication
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.tasks import InMemoryTaskStore
+from a2a.types import AgentCapabilities, AgentCard
+from a2a.utils.constants import (
+    AGENT_CARD_WELL_KNOWN_PATH,
+    EXTENDED_AGENT_CARD_PATH,
+)
+from fastapi import FastAPI
+from pydantic import BaseModel
+from google.adk.a2a.executor.a2a_agent_executor import A2aAgentExecutor
+from google.adk.a2a.utils.agent_card_builder import AgentCardBuilder
+from google.adk.artifacts import InMemoryArtifactService
 from google.adk.runners import Runner
-from google.adk.sessions import VertexAiSessionService
-from google.adk.memory import VertexAiMemoryBankService
-from google.adk.tools import google_search
+from google.adk.sessions import InMemorySessionService
+from google.cloud import logging as google_cloud_logging
+
+from agent import app as adk_app
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "true"
+PORT = os.getenv("PORT", 8081)
 
-project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
-model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-pro")
-reasoning_engine_app_name = os.getenv("REASONING_ENGINE_APP_NAME", "default-app")
-agent_engine_id = reasoning_engine_app_name.split('/')[-1] if reasoning_engine_app_name else "default-engine"
+_, project_id = google.auth.default()
 
-# Initialize Vertex AI
-if project_id:
-    try:
-        vertexai.init(project=project_id, location=location)
-        logger.info(f"Initialized Vertex AI for project {project_id}")
-    except Exception as e:
-        logger.error(f"Failed to initialize Vertex AI: {e}")
+runner = Runner(
+    app=adk_app,
+    artifact_service=InMemoryArtifactService(),
+    session_service=InMemorySessionService(),
+)
 
-app = FastAPI(title="Contractor Agent Service")
+request_handler = DefaultRequestHandler(
+    agent_executor=A2aAgentExecutor(runner=runner), task_store=InMemoryTaskStore()
+)
 
-class ChatMessage(BaseModel):
-    role: str
-    content: str
+A2A_RPC_PATH = f"/a2a/{adk_app.name}"
 
-class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
-    permit_id: Optional[str] = None
 
-class ChatChoice(BaseModel):
-    message: ChatMessage
-
-class ChatResponse(BaseModel):
-    choices: List[ChatChoice]
-
-def create_contractor_agent() -> LlmAgent:
-    """Creates an ADK LlmAgent configured to find licensed contractors."""
-    system_instruction = """
-    You are an expert at finding licensed contractors for specific jobs in a given area.
-    Use the google_search tool to find real, highly-rated, licensed contractors that match the user's needs.
-    Always provide contact information, a brief description of the contractor, and why they are a good fit for the job.
-    If the user asks for contractors in a specific area (like Santa Clara County), focus your search there.
-    """
-
-    return LlmAgent(
-        name="contractor_agent",
-        model=model_name,
-        instruction=system_instruction,
-        tools=[google_search]
+async def build_dynamic_agent_card() -> AgentCard:
+    """Builds the Agent Card dynamically from the root_agent."""
+    agent_card_builder = AgentCardBuilder(
+        agent=adk_app.root_agent,
+        capabilities=AgentCapabilities(streaming=True),
+        rpc_url=f"{os.getenv('APP_URL', f'http://0.0.0.0:{PORT}')}{A2A_RPC_PATH}",
+        agent_version=os.getenv("AGENT_VERSION", "0.1.0"),
     )
+    agent_card = await agent_card_builder.build()
+    return agent_card
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    if not project_id:
-        logger.warning("GCP Project ID not configured. Using fallback chat response.")
-        return ChatResponse(
-            choices=[ChatChoice(message=ChatMessage(role="assistant", content="This is a mock response from the contractor agent. Please configure GCP Project ID."))]
-        )
 
-    try:
-        agent = create_contractor_agent()
-        session_service = VertexAiSessionService(project_id, location, agent_engine_id=agent_engine_id)
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI) -> AsyncIterator[None]:
+    agent_card = await build_dynamic_agent_card()
+    a2a_app = A2AFastAPIApplication(agent_card=agent_card, http_handler=request_handler)
+    a2a_app.add_routes_to_app(
+        app_instance,
+        agent_card_url=f"{A2A_RPC_PATH}{AGENT_CARD_WELL_KNOWN_PATH}",
+        rpc_url=A2A_RPC_PATH,
+        extended_agent_card_url=f"{A2A_RPC_PATH}{EXTENDED_AGENT_CARD_PATH}",
+    )
+    yield
 
-        runner = Runner(
-            app_name=reasoning_engine_app_name or "default-app",
-            agent=agent,
-            session_service=session_service,
-            memory_service=VertexAiMemoryBankService(agent_engine_id=agent_engine_id)
-        )
 
-        session_id_suffix = f"-contractor-{request.permit_id}" if request.permit_id else "-contractor-chat"
-        list_sessions_response = await session_service.list_sessions(app_name=reasoning_engine_app_name or "default-app", user_id="contractor_user")
+app = FastAPI(
+    title="contractor-agent",
+    description="API for interacting with the Contractor Agent",
+    lifespan=lifespan,
+)
 
-        if list_sessions_response.sessions:
-            session = list_sessions_response.sessions[0]
-        else:
-            session = await session_service.create_session(app_name=reasoning_engine_app_name or "default-app", user_id="contractor_user")
+class Feedback(BaseModel):
+    rating: int
+    comment: str
 
-        new_user_message_text = request.messages[-1].content if request.messages else ""
-
-        history_text = "\n".join([f"{msg.role}: {msg.content}" for msg in request.messages[:-1]])
-        if history_text:
-            new_user_message_text = f"Previous conversation:\n{history_text}\n\nNew message:\n{new_user_message_text}"
-
-        new_message = Content(
-             role="user",
-             parts=[Part(text=new_user_message_text)]
-        )
-
-        final_text = ""
-        async for event in runner.run_async(user_id="contractor_user", session_id=session.id, new_message=new_message):
-             if hasattr(event, 'text') and event.text:
-                 final_text += event.text
-             elif isinstance(event, str):
-                 final_text += event
-             elif hasattr(event, 'content') and event.content and event.content.parts:
-                 for part in event.content.parts:
-                     if part.text:
-                        final_text += part.text
-
-        response_text = final_text.strip() if final_text else "I am sorry, I couldn't generate a response."
-
-        return ChatResponse(
-            choices=[
-                ChatChoice(
-                    message=ChatMessage(
-                        role="assistant",
-                        content=response_text
-                    )
-                )
-            ]
-        )
-    except Exception as e:
-        logger.error(f"Error communicating with contractor agent: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/feedback")
+def collect_feedback(feedback: Feedback) -> dict[str, str]:
+    """Collect and log feedback."""
+    logger.info(f"Feedback received: {feedback}")
+    return {"status": "success"}
 
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+# Main execution
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
