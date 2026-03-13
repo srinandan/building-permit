@@ -29,6 +29,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.tools import load_memory
+from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 
 from a2a.client import ClientConfig, ClientFactory
@@ -267,12 +268,12 @@ class AIService:
                 system_instruction += f"\nContext regarding the violation:\n{context}\n"
 
             # Setup A2A contractor agent call
-            contractor_agent_url = os.getenv("CONTRACTOR_AGENT_URL", "http://127.0.0.1:8001")
+            contractor_agent_url = os.getenv("CONTRACTOR_AGENT_URL", "http://0.0.0.0:8081/a2a/contractor_agent/.well-known/agent-card.json")
 
             client_factory = ClientFactory(
                 ClientConfig(
                     # Specify supported transport mechanisms
-                    supported_transports=[TransportProtocol.http_json],
+                    supported_transports=[TransportProtocol.http_json, TransportProtocol.jsonrpc],
                     # Use client preferences for protocol negotiation
                     use_client_preference=True,
                 )
@@ -284,7 +285,7 @@ class AIService:
                     "An agent that helps find licensed contractors for specific jobs in a given area. "
                     "Use this agent when the user asks for help finding a contractor."
                 ),
-                agent_card=f"{contractor_agent_url}/a2a/v1/card",
+                agent_card=f"{contractor_agent_url}",
                 a2a_client_factory=client_factory,
             )
 
