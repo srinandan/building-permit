@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: building-permit-frontend
+  namespace: building-permit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: building-permit-frontend
+  template:
+    metadata:
+      labels:
+        app: building-permit-frontend
+    spec:
+      containers:
+        - name: frontend
+          # Replace with your Artifact Registry path: us-central1-docker.pkg.dev/PROJECT_ID/building-permit/building-permit-frontend:latest
+          image: us-central1-docker.pkg.dev/nikhiljethava-rz7ham/building-permit/building-permit-frontend:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: building-permit-config
+          env:
+            - name: VITE_API_URL
+              # Normally VITE_ variables are baked in at build time. 
+              # Ensure Dockerfile supports overriding via runtime if possible, 
+              # or build the Frontend specific to the API's LoadBalancer IP.
+              # Note: For real world use, an Ingress would route the API traffic via the same IP/domain.
+              value: "http://REPLACE_WITH_API_EXTERNAL_IP:8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: building-permit-frontend
+  namespace: building-permit
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 3000
+  selector:
+    app: building-permit-frontend

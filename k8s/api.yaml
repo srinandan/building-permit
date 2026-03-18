@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqlite-pvc
+  namespace: building-permit
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: building-permit-api
+  namespace: building-permit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: building-permit-api
+  template:
+    metadata:
+      labels:
+        app: building-permit-api
+    spec:
+      serviceAccountName: build-permit-ksa
+      volumes:
+        - name: db-vol
+          persistentVolumeClaim:
+            claimName: sqlite-pvc
+      containers:
+        - name: api
+          # Replace with your Artifact Registry path: us-central1-docker.pkg.dev/PROJECT_ID/building-permit/building-permit-api:latest
+          image: us-central1-docker.pkg.dev/nikhiljethava-rz7ham/building-permit/building-permit-api:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: building-permit-config
+          env:
+            - name: AGENT_URL
+              value: "http://building-permit-agent:8000/analyze"
+          volumeMounts:
+            - name: db-vol
+              mountPath: /app/data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: building-permit-api
+  namespace: building-permit
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: building-permit-api

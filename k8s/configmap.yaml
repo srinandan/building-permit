@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: building-permit-config
+  namespace: building-permit
+data:
+  GOOGLE_CLOUD_LOCATION: "us-central1"
+  DOCUMENT_AI_LOCATION: "us"
+  DOCUMENT_AI_PROCESSOR_ID: "fbc20db3733ce780"
+  GEMINI_MODEL_NAME: "gemini-2.5-pro"
+  # Replace GOOGLE_CLOUD_PROJECT placeholder if applying manually
+  GOOGLE_CLOUD_PROJECT: "nikhiljethava-rz7ham"
+  VERTEX_RAG_CORPUS_NAME: "projects/nikhiljethava-rz7ham/locations/us-west1/ragCorpora/4611686018427387904"
+  REASONING_ENGINE_APP_NAME: "projects/835322045074/locations/us-central1/reasoningEngines/604184937997795328"
+  DB_NAME: "/app/data/building_plans.db"

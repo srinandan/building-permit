@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: building-permit-agent
+  namespace: building-permit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: building-permit-agent
+  template:
+    metadata:
+      labels:
+        app: building-permit-agent
+    spec:
+      serviceAccountName: build-permit-ksa
+      containers:
+        - name: agent
+          # Replace with your Artifact Registry path: us-central1-docker.pkg.dev/PROJECT_ID/building-permit/building-permit-agent:latest
+          image: us-central1-docker.pkg.dev/nikhiljethava-rz7ham/building-permit/building-permit-agent:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: building-permit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: building-permit-agent
+  namespace: building-permit
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+  selector:
+    app: building-permit-agent
