@@ -20,7 +20,7 @@ sa:
 
 rag:
 	@echo "Setting up RAG Engine..."
-	python3 rag_setup.py
+	uv run --with google-cloud-aiplatform,google-cloud-storage,pyopenssl python3 rag_setup.py
 
 agent-engine:
 	@echo "Deploying Agent Engine..."

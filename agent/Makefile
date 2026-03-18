@@ -2,10 +2,10 @@ GOOGLE_CLOUD_PROJECT ?= $(shell gcloud config get-value project)
 GOOGLE_CLOUD_PROJECT_NUMBER ?= $(shell gcloud projects describe ${GOOGLE_CLOUD_PROJECT} --format="value(projectNumber)")
 GOOGLE_CLOUD_LOCATION ?= us-central1
 DOCUMENT_AI_LOCATION ?= us
-DOCUMENT_AI_PROCESSOR_ID=24ec41d66617b372
+DOCUMENT_AI_PROCESSOR_ID=fbc20db3733ce780
 ##NOTE: DO NOT change us-west1; us-central1 is not supported
 VERTEX_RAG_CORPUS_NAME=projects/${GOOGLE_CLOUD_PROJECT}/locations/us-west1/ragCorpora/4611686018427387904
-REASONING_ENGINE_APP_NAME=projects/${GOOGLE_CLOUD_PROJECT}/locations/${GOOGLE_CLOUD_LOCATION}/reasoningEngines/3166398874436763648
+REASONING_ENGINE_APP_NAME=projects/835322045074/locations/${GOOGLE_CLOUD_LOCATION}/reasoningEngines/604184937997795328
 GEMINI_MODEL_NAME=gemini-2.5-pro
 
 .PHONY: install start build clean deploy
