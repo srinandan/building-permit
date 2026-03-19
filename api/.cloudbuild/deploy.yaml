@@ -41,51 +41,40 @@ steps:
         "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:latest",
       ]
 
-  # Deploy to Staging
+  # Deploy to GKE
   - name: "gcr.io/cloud-builders/gcloud"
-    id: deploy-staging
+    id: get-credentials
     entrypoint: gcloud
     args:
-      - "run"
-      - "deploy"
-      - "${_CONTAINER_NAME}"
+      - "container"
+      - "clusters"
+      - "get-credentials"
+      - "${_CLUSTER_NAME}"
+      - "--region"
+      - "${_CLUSTER_REGION}"
       - "--project"
       - "${PROJECT_ID}"
-      - "--region"
-      - "${_REGION}"
-      - "--image"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}"
-      - "--port"
-      - "8080"
-      - "--cpu"
-      - "1000m"
-      - "--memory"
-      - "1Gi"
-      - "--concurrency"
-      - "10"
-      - "--service-account"
-      - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-      - "--set-env-vars"
-      - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},DB_NAME=/app/data/building_plans.db,AGENT_URL=${_AGENT_URL}"
-      - "--startup-probe"
-      - "initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1"
-      - "--max-instances"
-      - "1"
-      - "--allow-unauthenticated"
-      - "--timeout"
-      - "300"
-      - "--cpu-boost"
-      - "--session-affinity"
-      - "--add-volume=name=db-vol,type=cloud-storage,bucket=${_DB_BUCKET_NAME}"
-      - "--add-volume-mount=volume=db-vol,mount-path=/app/data"
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: deploy-gke
+    args:
+      - "apply"
+      - "-f"
+      - "../k8s/configmap.yaml"
+      - "-f"
+      - "../k8s/api-deployment.yaml"
+      - "-f"
+      - "../k8s/api-service.yaml"
 
 substitutions:
-  _REGION: us-central1 # This can be overridden by GOOGLE_CLOUD_LOCATION if passed as substitution
+  _REGION: us-central1
   _ARTIFACT_REGISTRY_REPO_NAME: building-permit
   _CONTAINER_NAME: building-permit-api
   _COMMIT_SHA: latest
   _AGENT_URL: http://localhost:8000/analyze
   _DB_BUCKET_NAME: ${PROJECT_ID}-building-permit-data
+  _CLUSTER_NAME: your-cluster-name
+  _CLUSTER_REGION: us-central1
 
 # Environment vars for the runtime
 # We'll map _REGION to GOOGLE_CLOUD_LOCATION in the deploy step

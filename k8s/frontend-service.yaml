@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  type: LoadBalancer # For public access
+  ports:
+    - port: 80 # External traffic
+      targetPort: 3000 # Internal Node.js/Express port
+  selector:
+    app: frontend

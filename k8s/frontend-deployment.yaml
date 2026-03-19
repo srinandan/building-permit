@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "us-central1-docker.pkg.dev/your-project-id/building-permit/building-permit-frontend:latest" # Injected via Cloud Build
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: VITE_API_URL
+              value: "http://api-service:8080" # Placeholder, setting this in GKE might not work if Vite bakes it in at build time. For real usage, build the image with the correct URL or use an Ingress.

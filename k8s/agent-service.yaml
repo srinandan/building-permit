@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+spec:
+  type: ClusterIP # Internal only
+  ports:
+    - port: 8080 # This port will be used by the API to connect to the agent
+      targetPort: 8000 # This is the port Exposed by the container in Dockerfile
+  selector:
+    app: agent

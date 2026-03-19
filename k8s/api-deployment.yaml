@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: "us-central1-docker.pkg.dev/your-project-id/building-permit/building-permit-api:latest" # Injected via Cloud Build
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: AGENT_URL
+              value: "http://agent-service:8080/analyze"
+            - name: CONTRACTOR_AGENT_URL
+              value: "http://contractor-agent-service:8001/chat" # Port 8001 used locally, maybe 8080 in GKE
+            - name: GOOGLE_CLOUD_PROJECT
+              valueFrom:
+                configMapKeyRef:
+                  name: building-permit-config
+                  key: GOOGLE_CLOUD_PROJECT
+                  optional: true
+            - name: GOOGLE_CLOUD_LOCATION
+              valueFrom:
+                configMapKeyRef:
+                  name: building-permit-config
+                  key: GOOGLE_CLOUD_LOCATION
+                  optional: true
+            - name: DB_NAME
+              value: "/app/data/building_plans.db" # Standard local persistence for testing
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/data
+      volumes:
+        - name: data-volume
+          emptyDir: {} # Temporary storage for testing, persist via PVC if needed

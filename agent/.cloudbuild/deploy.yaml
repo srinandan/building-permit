@@ -44,46 +44,30 @@ steps:
         "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:latest",
       ]
 
-  # Deploy to Staging
+  # Deploy to GKE
   - name: "gcr.io/cloud-builders/gcloud"
-    id: deploy-staging
+    id: get-credentials
     entrypoint: gcloud
     args:
-      - "run"
-      - "deploy"
-      - "${_CONTAINER_NAME}"
+      - "container"
+      - "clusters"
+      - "get-credentials"
+      - "${_CLUSTER_NAME}"
+      - "--region"
+      - "${_CLUSTER_REGION}"
       - "--project"
       - "${PROJECT_ID}"
-      - "--region"
-      - "${_REGION}"
-      - "--image"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}"
-      - "--port"
-      - "8080"
-      - "--cpu"
-      - "2000m"
-      - "--memory"
-      - "8Gi"
-      - "--concurrency"
-      - "40"
-      - "--concurrency"
-      - "10"
-      - "--service-account"
-      - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-      - "--set-env-vars"
-      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},DOCUMENT_AI_LOCATION=${_DOCUMENT_AI_LOCATION},DOCUMENT_AI_PROCESSOR_ID=${_DOCUMENT_AI_PROCESSOR_ID},VERTEX_RAG_CORPUS_NAME=${_VERTEX_RAG_CORPUS_NAME},REASONING_ENGINE_APP_NAME=${_REASONING_ENGINE_APP_NAME},GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME}'
-      - "--startup-probe"
-      - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
-      - "--max-instances"
-      - "1"
-      - "--allow-unauthenticated"
-      - "--timeout"
-      - "300"
-      - "--cpu-boost"
-      - "--session-affinity"
-      - "--ingress"
-      - "internal-and-cloud-load-balancing"
-      - "--labels=appid=building-permit"
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: deploy-gke
+    args:
+      - "apply"
+      - "-f"
+      - "../k8s/configmap.yaml"
+      - "-f"
+      - "../k8s/agent-deployment.yaml"
+      - "-f"
+      - "../k8s/agent-service.yaml"
 
 substitutions:
   _REGION: ${_REGION}

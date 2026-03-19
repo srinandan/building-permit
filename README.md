@@ -4,11 +4,13 @@ An Agentic application to review building plans against the California Building 
 
 ## Architecture
 
-This is a monorepo containing three microservices:
+This is a monorepo containing microservices designed for deployment on **Google Kubernetes Engine (GKE)**:
 1. **Frontend**: React application built with Vite and Tailwind CSS.
 2. **API Gateway**: Go backend using the Gin framework to handle file uploads and orchestrate the AI analysis.
 3. **AI Agent**: Python service using FastAPI, Google Cloud Document AI, Vertex AI RAG Engine, and Gemini. It leverages **Vertex AI Session** and **MemoryBank** for robust, persistent conversation history.
-4. **Agent Engine**: Vertex AI Agent Engine for deploying and scaling the AI components.
+4. **Contractor Agent**: Python service for contractor-specific queries.
+
+All services are containerized and deployed to a GKE cluster for scalability, routing, and deep integration with **Security Command Center (SCC)** for vulnerability tracing.
 
 
 ## Prerequisites
@@ -43,6 +45,36 @@ After running the automated setup, you need to manually create a Document AI Pro
 - Go to the [Document AI console](https://console.cloud.google.com/ai/document-ai/processors).
 - Click **Create Processor** and select **Document OCR**.
 - Note the **Processor ID** and add it to your `.env` file in the `agent` directory.
+
+### 3. GKE Deployment
+
+We use Kubernetes manifests located in the `k8s/` directory to deploy the application to GKE.
+
+#### Prerequisite: GKE Cluster
+Ensure you have an active GKE cluster. You will need to configure your Cloud Build triggers with your cluster name and region.
+
+#### Deploying with Cloud Build
+The application uses Cloud Build for automated CI/CD to GKE. Triggers should be configured for each service's `.cloudbuild/deploy.yaml` file:
+
+*   **API Gateway**: `api/.cloudbuild/deploy.yaml`
+*   **AI Agent**: `agent/.cloudbuild/deploy.yaml`
+*   **Frontend**: `frontend/.cloudbuild/deploy.yaml`
+
+These triggers will automatically:
+1.  Build the Docker images.
+2.  Push them to Artifact Registry.
+3.  Apply the Kubernetes manifests using `kubectl apply`.
+
+#### Manual Manifest Application
+You can also apply the manifests manually using `kubectl` (ensure you are connected to your cluster):
+
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/
+```
+
+> [!IMPORTANT]
+> **Workload Identity**: Ensure your GKE pods have permissions to access Vertex AI and Document AI (using Workload Identity or Service Accounts).
 
 ## Local Development
 

@@ -34,40 +34,30 @@ steps:
       ]
 
   # Deploy to Staging
+  # Deploy to GKE
   - name: "gcr.io/cloud-builders/gcloud"
-    id: deploy-staging
+    id: get-credentials
     entrypoint: gcloud
     args:
-      - "run"
-      - "deploy"
-      - "${_CONTAINER_NAME}"
+      - "container"
+      - "clusters"
+      - "get-credentials"
+      - "${_CLUSTER_NAME}"
+      - "--region"
+      - "${_CLUSTER_REGION}"
       - "--project"
       - "${PROJECT_ID}"
-      - "--region"
-      - "${_REGION}"
-      - "--image"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}"
-      - "--port"
-      - "3000"
-      - "--cpu"
-      - "1000m"
-      - "--memory"
-      - "1Gi"
-      - "--concurrency"
-      - "10"
-      - "--service-account"
-      - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-      - "--set-env-vars"
-      - 'VITE_API_URL=${_API_URL},GOOGLE_CLOUD_LOCATION=${_REGION}'
-      - "--startup-probe"
-      - 'initialDelaySeconds=30,tcpSocket.port=3000,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
-      - "--max-instances"
-      - "1"
-      - "--allow-unauthenticated"
-      - "--timeout"
-      - "300"
-      - "--cpu-boost"
-      - "--session-affinity"
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: deploy-gke
+    args:
+      - "apply"
+      - "-f"
+      - "../k8s/configmap.yaml"
+      - "-f"
+      - "../k8s/frontend-deployment.yaml"
+      - "-f"
+      - "../k8s/frontend-service.yaml"
 
 substitutions:
   _REGION: us-central1

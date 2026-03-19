@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-deployment
+  labels:
+    app: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent
+  template:
+    metadata:
+      labels:
+        app: agent
+    spec:
+      containers:
+        - name: agent
+          image: "us-central1-docker.pkg.dev/your-project-id/building-permit/building-permit-agent:latest" # Injected via Cloud Build
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+            - name: DOCUMENT_AI_LOCATION
+              value: "us"
+            - name: DOCUMENT_AI_PROCESSOR_ID
+              value: "your-processor-id" # Can be injected via secret/config
+            - name: VERTEX_RAG_CORPUS_NAME
+              value: "your-rag-corpus-name"
+            - name: REASONING_ENGINE_APP_NAME
+              value: "your-reasoning-engine-name"
+            - name: GEMINI_MODEL_NAME
+              value: "gemini-2.5-pro"
+            - name: GOOGLE_CLOUD_PROJECT
+              valueFrom:
+                configMapKeyRef:
+                  name: building-permit-config
+                  key: GOOGLE_CLOUD_PROJECT
+                  optional: true
+            - name: GOOGLE_CLOUD_LOCATION
+              valueFrom:
+                configMapKeyRef:
+                  name: building-permit-config
+                  key: GOOGLE_CLOUD_LOCATION
+                  optional: true
