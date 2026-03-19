@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: agent-deployment
+  annotations:
+    apphub.cloud.google.com/functional-type: "AGENT"  
   labels:
     app: agent
 spec:
