@@ -46,12 +46,12 @@ export function Login() {
   return (
     <div className="min-h-screen bg-surface font-body flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center flex flex-col items-center px-4">
-        <img src="/scc_logo.jpg" alt="Santa Clara County Logo" className="h-24 w-24 object-contain rounded-full bg-white shadow-sm mb-6" />
+        <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-24 w-24 object-contain rounded-full bg-white shadow-sm mb-6" />
         <h2 className="text-3xl font-black tracking-tight text-on-surface uppercase font-['Inter']">
-          Santa Clara County
+          San Paloma County Permit Hub
         </h2>
         <p className="mt-2 text-sm font-semibold tracking-wider uppercase text-tertiary">
-          Building Plan Portal
+          Permit Hub
         </p>
       </div>
 

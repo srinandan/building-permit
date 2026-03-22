@@ -1,4 +1,4 @@
-module github.com/scc/building-plan-api
+module github.com/spc/building-plan-api
 
 go 1.25.8
 

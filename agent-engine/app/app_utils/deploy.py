@@ -180,7 +180,7 @@ def setup_agent_identity(client: Any, project: str, display_name: str) -> Any:
 )
 @click.option(
     "--description",
-    default="Building Permit agent for Santa Clara",
+    default="Building Permit agent for San Paloma",
     help="Description of the agent",
 )
 @click.option(

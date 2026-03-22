@@ -1,7 +1,7 @@
 # Building Permit Compliance Portal - Project Specification
 
 ## 1. Project Overview
-The **Building Permit Compliance Portal** is an end-to-end system designed for residents of Santa Clara County (SCC) to streamline the building permit submission and analysis process. The core value proposition is the use of Generative AI (Gemini, Vertex AI, and Document AI) to provide near-instant compliance checks on submitted building plan PDFs, reducing the manual burden on county reviewers and providing immediate feedback to applicants.
+The **Building Permit Compliance Portal** is an end-to-end system designed for residents of San Paloma County (SPC) to streamline the building permit submission and analysis process. The core value proposition is the use of Generative AI (Gemini, Vertex AI, and Document AI) to provide near-instant compliance checks on submitted building plan PDFs, reducing the manual burden on county reviewers and providing immediate feedback to applicants.
 
 ### Goals:
 - Provide a user-friendly dashboard for residents to manage properties and permit applications.

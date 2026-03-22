@@ -19,7 +19,7 @@ This repository implements an agentic AI system designed to automate the review 
 - **Visual Verification:** Ability to "see" and interpret diagrams, symbols, and annotations in blueprints to verify spatial requirements (e.g., clearance, dimensions).
 
 ### Regulatory Reasoning (RAG)
-- **Contextual Retrieval:** Employs Vertex AI RAG Engine to retrieve relevant sections from the California Building Standards Code (Title 24) and Santa Clara County local reach codes.
+- **Contextual Retrieval:** Employs Vertex AI RAG Engine to retrieve relevant sections from the California Building Standards Code (Title 24) and San Paloma County local reach codes.
 - **Compliance Mapping:** Matches extracted plan data against retrieved regulatory text to identify specific violations or approved elements.
 - **Actionable Feedback:** Generates structured reports that include exact code sections, detailed descriptions of non-compliance, and specific suggestions for remediation.
 - **Agentic Memory & Context:** Utilizes Google ADK (Agent Development Kit) to maintain conversational state and long-term memory across sessions using Vertex AI Session and MemoryBank services.
@@ -48,7 +48,7 @@ This repository implements an agentic AI system designed to automate the review 
 
 ### Regulatory Frameworks
 - **CA Title 24 (California Building Standards Code):** Expertise in Parts 6 (Energy) and 11 (CalGreen).
-- **Local Reach Codes:** Specialized knowledge of Santa Clara County requirements, including All-Electric building mandates and EV charging infrastructure.
+- **Local Reach Codes:** Specialized knowledge of San Paloma County requirements, including All-Electric building mandates and EV charging infrastructure.
 
 ### Architectural Standards
 - **Plan Interpretation:** Understanding of standard architectural scales, legends, and sheet types (Site Plans, Floor Plans, MEP).

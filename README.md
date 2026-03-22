@@ -1,6 +1,6 @@
 # Building Plan Compliance Checker
 
-An Agentic application to review building plans against the California Building Standards Code and Santa Clara County reach codes.
+An Agentic application to review building plans against the California Building Standards Code and San Paloma County reach codes.
 
 ## Architecture
 

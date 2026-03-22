@@ -1,3 +1,6 @@
 api-server
 __pycache__/
 *.db
+
+# Ignore Go binary
+building-plan-api
