@@ -1,0 +1,93 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  spellcheck:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Codespell
+        uses: codespell-project/actions-codespell@v2
+        with:
+          check_filenames: true
+          check_hidden: false
+          skip: "*.json,*.csv,*.lock,package-lock.json,*.sum,*.mod,*.png,*.jpg,*.webm,*.pdf,*.toml"
+
+  dead-links:
+    name: Dead Links Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+      - name: Lint agent
+        run: |
+          cd agent
+          uv sync --dev
+          uv pip install pylint
+          uv run pylint --disable=all --enable=E,F $(git ls-files '*.py')
+      - name: Lint contractor-agent
+        run: |
+          cd contractor-agent
+          uv sync --dev
+          uv pip install pylint
+          uv run pylint --disable=all --enable=E,F $(git ls-files '*.py')
+      - name: Lint agent-engine
+        run: |
+          cd agent-engine
+          uv sync --dev
+          uv pip install pylint
+          uv run pylint --disable=all --enable=E,F $(git ls-files '*.py')
+
+  lint-go:
+    name: Lint Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'api/go.mod'
+          cache: false
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: api
+          args: --timeout=5m
+
+  lint-ts:
+    name: Lint TypeScript/React
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
