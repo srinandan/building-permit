@@ -64,7 +64,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: 'api/go.mod'
           cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
