@@ -154,7 +154,7 @@ class AIService:
                      callback_context._invocation_context.session
                  )
 
-             assessor_mcp_url = os.getenv("ASSESSOR_MCP_SERVER_URL", "http://0.0.0.0:8002/sse")
+             assessor_mcp_url = os.getenv("ASSESSOR_MCP_SERVER_URL", "http://127.0.0.1:8002/sse")
              mcp_toolset = McpToolset(
                  connection_params=SseConnectionParams(url=assessor_mcp_url)
              )

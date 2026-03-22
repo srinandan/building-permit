@@ -1,5 +1,6 @@
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from db import get_connection, init_db
 
 # Initialize database
@@ -8,7 +9,12 @@ init_db()
 # Initialize FastMCP Server
 mcp_server = FastMCP(name="assessor")
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+    )
+)
 def lookup_parcel(apn: str) -> dict:
     """Lookup property details by Assessor's Parcel Number (APN)."""
     conn = get_connection()
@@ -20,7 +26,12 @@ def lookup_parcel(apn: str) -> dict:
         return dict(row)
     return {"error": f"Parcel not found for APN: {apn}"}
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+    )
+)
 def get_zoning_classification(address: str) -> str:
     """Get the zoning classification code for a given address."""
     conn = get_connection()
@@ -32,7 +43,12 @@ def get_zoning_classification(address: str) -> str:
         return row[0]
     return "Unknown"
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+    )
+)
 def get_setback_requirements(zoning_code: str) -> dict:
     """Get setback requirements, lot coverage limits, and height limits for a given zoning code."""
     conn = get_connection()
@@ -45,7 +61,13 @@ def get_setback_requirements(zoning_code: str) -> dict:
     return {"error": f"Zoning code not found: {zoning_code}"}
 
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        idempotentHint=False,
+        destructiveHint=True,
+    )
+)
 def add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_value: int) -> dict:
     """Add a new property to the assessor's database."""
     conn = get_connection()
@@ -62,7 +84,13 @@ def add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_
     finally:
         conn.close()
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        idempotentHint=False,
+        destructiveHint=True,
+    )
+)
 def rezone_address(address: str, new_zoning_code: str) -> dict:
     """Update the zoning classification code for a specific address."""
     conn = get_connection()
@@ -85,7 +113,13 @@ def rezone_address(address: str, new_zoning_code: str) -> dict:
     finally:
         conn.close()
 
-@mcp_server.tool()
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        idempotentHint=True,
+        destructiveHint=True,
+    )
+)
 def add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_lot_coverage_percent: int, front_setback_ft: int, rear_setback_ft: int, side_setback_ft: int) -> dict:
     """Add or update the setback requirements and lot coverage limits for a zoning code."""
     conn = get_connection()
