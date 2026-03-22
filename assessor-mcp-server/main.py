@@ -1,78 +1,113 @@
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from db import get_connection, init_db
+
+# Initialize database
+init_db()
 
 # Initialize FastMCP Server
 mcp_server = FastMCP(name="assessor")
 
-# Fake Santa Clara County Assessor Data
-PARCELS = {
-    "123-45-678": {
-        "apn": "123-45-678",
-        "address": "123 Main St, Santa Clara, CA 95050",
-        "lot_size_sqft": 6000,
-        "owner": "John Doe",
-        "assessed_value": 1200000
-    },
-    "987-65-432": {
-        "apn": "987-65-432",
-        "address": "456 Elm St, San Jose, CA 95112",
-        "lot_size_sqft": 8000,
-        "owner": "Jane Smith",
-        "assessed_value": 1500000
-    }
-}
-
-ZONING_BY_ADDRESS = {
-    "123 Main St, Santa Clara, CA 95050": "R-1",
-    "456 Elm St, San Jose, CA 95112": "R-1-8"
-}
-
-ZONING_RULES = {
-    "R-1": {
-        "description": "Single-Family Residential",
-        "max_height_ft": 30,
-        "max_lot_coverage_percent": 40,
-        "setbacks": {
-            "front_ft": 20,
-            "rear_ft": 20,
-            "side_ft": 5
-        }
-    },
-    "R-1-8": {
-        "description": "Single-Family Residential (8,000 sq ft min lot)",
-        "max_height_ft": 35,
-        "max_lot_coverage_percent": 35,
-        "setbacks": {
-            "front_ft": 25,
-            "rear_ft": 25,
-            "side_ft": 8
-        }
-    }
-}
-
-
 @mcp_server.tool()
 def lookup_parcel(apn: str) -> dict:
     """Lookup property details by Assessor's Parcel Number (APN)."""
-    if apn in PARCELS:
-        return PARCELS[apn]
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM parcels WHERE apn = ?", (apn,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return dict(row)
     return {"error": f"Parcel not found for APN: {apn}"}
 
 @mcp_server.tool()
 def get_zoning_classification(address: str) -> str:
     """Get the zoning classification code for a given address."""
-    for known_address, zoning in ZONING_BY_ADDRESS.items():
-        if address.lower() in known_address.lower() or known_address.lower() in address.lower():
-             return zoning
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT zoning_code FROM zoning_by_address WHERE address LIKE ?", (f"%{address}%",))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return row[0]
     return "Unknown"
 
 @mcp_server.tool()
 def get_setback_requirements(zoning_code: str) -> dict:
     """Get setback requirements, lot coverage limits, and height limits for a given zoning code."""
-    if zoning_code in ZONING_RULES:
-        return ZONING_RULES[zoning_code]
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM zoning_rules WHERE zoning_code = ?", (zoning_code,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        return dict(row)
     return {"error": f"Zoning code not found: {zoning_code}"}
 
+
+@mcp_server.tool()
+def add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_value: int) -> dict:
+    """Add a new property to the assessor's database."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO parcels (apn, address, lot_size_sqft, owner, assessed_value) VALUES (?, ?, ?, ?, ?)",
+            (apn, address, lot_size_sqft, owner, assessed_value)
+        )
+        conn.commit()
+        return {"status": "success", "message": f"Parcel {apn} added successfully."}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+@mcp_server.tool()
+def rezone_address(address: str, new_zoning_code: str) -> dict:
+    """Update the zoning classification code for a specific address."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Check if address exists
+        c.execute("SELECT address FROM zoning_by_address WHERE address LIKE ?", (f"%{address}%",))
+        row = c.fetchone()
+        if row:
+            actual_address = row[0]
+            c.execute("UPDATE zoning_by_address SET zoning_code = ? WHERE address = ?", (new_zoning_code, actual_address))
+        else:
+            # If not exists, insert it
+            c.execute("INSERT INTO zoning_by_address (address, zoning_code) VALUES (?, ?)", (address, new_zoning_code))
+
+        conn.commit()
+        return {"status": "success", "message": f"Address '{address}' rezoned to {new_zoning_code}."}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+@mcp_server.tool()
+def add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_lot_coverage_percent: int, front_setback_ft: int, rear_setback_ft: int, side_setback_ft: int) -> dict:
+    """Add or update the setback requirements and lot coverage limits for a zoning code."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT INTO zoning_rules (zoning_code, description, max_height_ft, max_lot_coverage_percent, front_setback_ft, rear_setback_ft, side_setback_ft)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(zoning_code) DO UPDATE SET
+                description=excluded.description,
+                max_height_ft=excluded.max_height_ft,
+                max_lot_coverage_percent=excluded.max_lot_coverage_percent,
+                front_setback_ft=excluded.front_setback_ft,
+                rear_setback_ft=excluded.rear_setback_ft,
+                side_setback_ft=excluded.side_setback_ft
+        ''', (zoning_code, description, max_height_ft, max_lot_coverage_percent, front_setback_ft, rear_setback_ft, side_setback_ft))
+        conn.commit()
+        return {"status": "success", "message": f"Zoning rule for '{zoning_code}' added/updated."}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
 
 app = mcp_server.sse_app
 

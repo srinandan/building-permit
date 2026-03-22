@@ -17,3 +17,8 @@ cd assessor-mcp-server
 uv sync
 make start
 ```
+
+## Write Tools
+- `add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_value: int) -> dict`: Add a new property to the assessor's database.
+- `rezone_address(address: str, new_zoning_code: str) -> dict`: Update the zoning classification code for a specific address.
+- `add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_lot_coverage_percent: int, front_setback_ft: int, rear_setback_ft: int, side_setback_ft: int) -> dict`: Add or update the setback requirements and lot coverage limits for a zoning code.
