@@ -8,6 +8,9 @@ license: Apache-2.0
 
 This repository implements an agentic AI system designed to automate the review of building plans against complex regulatory frameworks. Below is a detailed breakdown of the technical and functional skills embedded in this project.
 
+## Agent Instructions & Specifications
+- **Project Specifications:** When executing tasks, modifying features, or resolving issues, the agent **MUST** review and adhere to the project specifications and design rules detailed in the `plan/` directory (e.g. `plan/DESIGN.md`, `plan/spec.md`). This folder serves as the ground truth for architecture, UI design syntax, and feature goals.
+
 ## 1. Core AI & Analysis Skills
 
 ### Multimodal Document Understanding

@@ -44,25 +44,25 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center flex flex-col items-center">
-        <img src="/scc_logo.jpg" alt="Santa Clara County Logo" className="h-24 w-auto mb-4 rounded-full shadow-sm" />
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
+    <div className="min-h-screen bg-surface font-body flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center flex flex-col items-center px-4">
+        <img src="/scc_logo.jpg" alt="Santa Clara County Logo" className="h-24 w-24 object-contain rounded-full bg-white shadow-sm mb-6" />
+        <h2 className="text-3xl font-black tracking-tight text-on-surface uppercase font-['Inter']">
           Santa Clara County
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-sm font-semibold tracking-wider uppercase text-tertiary">
           Building Plan Portal
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleLogin}>
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md px-6">
+        <div className="bg-surface-container-lowest py-10 px-6 sm:px-10 shadow-lg shadow-slate-200/50 rounded-3xl border border-surface-container-highest">
+          <form className="space-y-8" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">
                 Email address
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative group">
                 <input
                   id="email"
                   name="email"
@@ -71,16 +71,17 @@ export function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full bg-surface-container-low border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary placeholder:text-outline/50 transition-all duration-200 shadow-sm"
+                  placeholder="name@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative group">
                 <input
                   id="password"
                   name="password"
@@ -89,19 +90,21 @@ export function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full bg-surface-container-low border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary placeholder:text-outline/50 transition-all duration-200 shadow-sm"
+                  placeholder="••••••••"
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">For demo purposes, any password will work.</p>
+              <p className="mt-2 ml-1 text-[10px] text-tertiary/80 italic font-medium">For demo purposes, any password will work.</p>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full h-14 bg-gradient-to-br from-primary to-primary-container text-white rounded-full font-bold tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all duration-200"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
+                {!loading && <span className="material-symbols-outlined text-sm">login</span>}
               </button>
             </div>
           </form>

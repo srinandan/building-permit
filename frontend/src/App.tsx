@@ -20,6 +20,8 @@ import { useAuthStore } from './store';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { PermitDetail } from './components/PermitDetail';
+import { NewPermit } from './components/NewPermit';
+import { DocumentCenter } from './components/DocumentCenter';
 import './App.css';
 
 // Protected Route wrapper
@@ -43,9 +45,22 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         } />
+
+        <Route path="/new-permit" element={
+          <ProtectedRoute>
+            <NewPermit />
+          </ProtectedRoute>
+        } />
+
         <Route path="/permit/:id" element={
           <ProtectedRoute>
             <PermitDetail />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/permit/:id/documents" element={
+          <ProtectedRoute>
+            <DocumentCenter />
           </ProtectedRoute>
         } />
 

@@ -17,16 +17,29 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store';
-import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, FileText, Plus, LogOut, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BottomNav } from './BottomNav';
+import { Loader2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export function Dashboard() {
-  const { user, logout, currentProperty, setCurrentProperty } = useAuthStore();
+  const { user, currentProperty, setCurrentProperty } = useAuthStore();
   const navigate = useNavigate();
-  const [properties, setProperties] = useState<any[]>([]);
+
   const [permits, setPermits] = useState<any[]>([]);
+
+  const handleDeletePermit = async (permitId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigating to detail page
+    if (window.confirm('Are you sure you want to delete this permit application?')) {
+      try {
+        await axios.delete(`${API_URL}/api/permits/${permitId}`);
+        setPermits(permits.filter((p) => p.id !== permitId));
+      } catch (error) {
+        console.error('Failed to delete permit', error);
+      }
+    }
+  };
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,17 +53,12 @@ export function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch properties
         const propResponse = await axios.get(`${API_URL}/api/users/${user.id}/properties`);
-
         if (!isMounted) return;
 
         let props = propResponse.data;
 
-        // Prevent double creation in React Strict Mode by checking if we already started creating
         if (props.length === 0) {
-            // Check if we already have it in local state to avoid race condition
-            // Auto-create a property for demo purposes
             try {
               const newPropRes = await axios.post(`${API_URL}/api/users/${user.id}/properties`, {
                   address: "123 Main St",
@@ -59,7 +67,6 @@ export function Dashboard() {
               });
               props = [newPropRes.data];
             } catch (e) {
-              // If it failed, it might be a race condition from strict mode. Fetch again just in case
               const retryRes = await axios.get(`${API_URL}/api/users/${user.id}/properties`);
               props = retryRes.data;
             }
@@ -67,7 +74,6 @@ export function Dashboard() {
 
         if (!isMounted) return;
 
-        // Remove duplicates just in case there are multiple entries for the same address
         const uniqueProps = [];
         const seenAddresses = new Set();
         for (const p of props) {
@@ -78,12 +84,11 @@ export function Dashboard() {
         }
         props = uniqueProps;
 
-        setProperties(props);
+
         if (!currentProperty && props.length > 0) {
             setCurrentProperty(props[0]);
         }
 
-        // Fetch permits if we have a property
         if (props.length > 0) {
             const propId = currentProperty ? currentProperty.id : props[0].id;
             const permitResponse = await axios.get(`${API_URL}/api/properties/${propId}/permits`);
@@ -106,117 +111,193 @@ export function Dashboard() {
     };
   }, [user, currentProperty, setCurrentProperty, navigate]);
 
-  const handleCreatePermit = async () => {
-      if (!currentProperty) return;
-      const title = prompt("Enter a title for the new permit application:");
-      if (!title) return;
-
-      try {
-          await axios.post(`${API_URL}/api/properties/${currentProperty.id}/permits`, {
-              title,
-              description: "Building plan submission"
-          });
-          // Refresh permits
-          const permitResponse = await axios.get(`${API_URL}/api/properties/${currentProperty.id}/permits`);
-          setPermits(permitResponse.data);
-      } catch(err) {
-          console.error("Failed to create permit", err);
-      }
+  const getStatusColorClass = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s.includes('approved')) return 'bg-secondary';
+    if (s.includes('review')) return 'bg-primary';
+    if (s.includes('suggested') || s.includes('action') || s.includes('draft') || s.includes('rejected')) return 'bg-error';
+    return 'bg-outline'; // Default fallback
   };
 
-  const getStatusBadge = (status: string) => {
-    const s = status.toLowerCase();
-    if (s.includes('approved')) return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{status}</span>;
-    if (s.includes('suggested')) return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">{status}</span>;
-    if (s.includes('rejected')) return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{status}</span>;
-    return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{status}</span>;
+  const getStatusLabel = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s.includes('approved')) return 'Approved';
+    if (s.includes('review')) return 'In Review';
+    return 'Action Required';
+  };
+
+  const getStatusLabelStyles = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s.includes('approved')) return 'bg-secondary-container text-on-secondary-container';
+    if (s.includes('review')) return 'bg-primary-fixed text-on-primary-fixed-variant';
+    return 'bg-error-container text-on-error-container';
+  };
+
+  const getTimeAgo = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays} days ago`;
+
+    // Fallback to formatted date
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const approvedCount = permits.filter(p => p.status?.toLowerCase().includes('approved')).length;
+  const inReviewCount = permits.filter(p => p.status?.toLowerCase().includes('review')).length;
+
+  // Create a display ID to fake the #BP-2024-XXXX format based on real DB IDs
+  const getDisplayId = (id: number) => {
+    return `#BP-2024-${String(id).padStart(4, '0')}`;
   };
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <img src="/scc_logo.jpg" alt="SCC Logo" className="h-8 w-8 rounded-full" />
-              <h1 className="text-xl font-bold text-gray-900">Santa Clara County Portal</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">{user.email}</span>
-              <button onClick={() => { logout(); navigate('/login'); }} className="text-gray-400 hover:text-gray-500">
-                <LogOut className="w-5 h-5" />
-              </button>
+    <div className="bg-surface font-body text-on-surface antialiased pb-28 min-h-screen">
+      {/* TopAppBar */}
+      <header className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+        <div className="flex items-center justify-between px-6 h-16 w-full">
+          <div className="flex items-center gap-4">
+            <button className="text-blue-700 dark:text-blue-400 active:scale-95 duration-200">
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <img src="/scc_logo.jpg" alt="Santa Clara County Logo" className="h-8 w-8 object-contain rounded-full bg-white shadow-sm" />
+              <h1 className="text-lg sm:text-xl font-black text-blue-800 dark:text-blue-400 uppercase tracking-tight font-['Inter']">
+                Santa Clara County
+              </h1>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button className="text-slate-500 dark:text-slate-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-full active:scale-95 duration-200">
+              <span className="material-symbols-outlined">notifications</span>
+            </button>
+          </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="pt-20 px-6">
         {loading ? (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
         ) : (
-            <div className="space-y-8">
-                {/* Property Card */}
-                <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-100">
-                    <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center">
-                        <MapPin className="text-blue-500 mr-2" />
-                        <h3 className="text-lg leading-6 font-medium text-gray-900">My Properties</h3>
-                    </div>
-                    <div className="p-6">
-                        {properties.map(prop => (
-                            <div key={prop.id} className="border border-gray-200 rounded-md p-4 bg-white">
-                                <p className="font-semibold text-gray-900">{prop.address}</p>
-                                <p className="text-gray-500 text-sm">{prop.city}, CA {prop.zip_code}</p>
+            <>
+                {/* Hero Section & CTA */}
+                <section className="py-6">
+                  <div className="flex flex-col gap-2 mb-8">
+                    <h2 className="text-4xl font-extrabold tracking-tighter text-on-surface leading-tight">Welcome back, <span className="text-primary">{user.name || user.email.split('@')[0]}</span></h2>
+                    <p className="text-on-surface-variant font-medium">You have {permits.length} active permit applications needing attention.</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/new-permit')}
+                    className="w-full primary-gradient text-on-primary py-5 px-6 rounded-xl flex items-center justify-between shadow-lg shadow-primary/20 active:scale-95 transition-transform duration-200"
+                  >
+                    <span className="text-lg font-bold tracking-tight">Start New Application</span>
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add_circle</span>
+                  </button>
+                </section>
+
+                {/* Search Bar */}
+                <section className="mb-10">
+                  <div className="relative ghost-border rounded-xl bg-surface-container-low px-4 py-3 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-outline">search</span>
+                    <input className="bg-transparent border-none focus:ring-0 text-on-surface-variant w-full font-medium placeholder:text-outline outline-none" placeholder="Search permits by ID or address..." type="text"/>
+                    <span className="material-symbols-outlined text-outline">tune</span>
+                  </div>
+                </section>
+
+                {/* Bento Stats Grid */}
+                <section className="grid grid-cols-2 gap-4 mb-10">
+                  <div className="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-1 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary">Approved</span>
+                    <span className="text-3xl font-black text-secondary">{approvedCount.toString().padStart(2, '0')}</span>
+                  </div>
+                  <div className="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-1 shadow-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary">In Review</span>
+                    <span className="text-3xl font-black text-primary">{inReviewCount.toString().padStart(2, '0')}</span>
+                  </div>
+                </section>
+
+                {/* Permit Cards */}
+                <section className="flex flex-col gap-6 mb-12">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-tertiary">Active Permits</h3>
+                    <span className="text-xs font-bold text-primary cursor-pointer">View All</span>
+                  </div>
+
+                  {permits.length === 0 ? (
+                      <div className="text-center p-8 bg-surface-container-lowest rounded-xl shadow-sm text-on-surface-variant">
+                          No active permits found. Start a new application!
+                      </div>
+                  ) : (
+                      permits.map(permit => (
+                          <div
+                            key={permit.id}
+                            onClick={() => navigate(`/permit/${permit.id}`)}
+                            className="bg-surface-container-lowest rounded-xl overflow-hidden relative shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          >
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusColorClass(permit.status)}`}></div>
+                            <div className="p-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex flex-col pr-2">
+                                  <span className="text-[10px] font-mono font-bold text-tertiary mb-1">ID: {getDisplayId(permit.id)}</span>
+                                  <h4 className="text-lg font-bold text-on-surface line-clamp-1">{permit.title}</h4>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                  <span className={`shrink-0 px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${getStatusLabelStyles(permit.status)}`}>
+                                    {getStatusLabel(permit.status)}
+                                  </span>
+                                  <button
+                                    onClick={(e) => handleDeletePermit(permit.id, e)}
+                                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-95 duration-200"
+                                    title="Delete Permit"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-on-surface-variant mb-4">
+                                <span className="material-symbols-outlined text-sm">location_on</span>
+                                <span className="text-sm font-medium line-clamp-1">
+                                    {currentProperty?.address ? `${currentProperty.address}, ${currentProperty.city}` : 'No Address Set'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-4 border-t border-surface-container">
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] uppercase font-bold text-outline tracking-wider">Last Update</span>
+                                  <span className="text-xs font-semibold text-on-surface">{getTimeAgo(permit.created_at)}</span>
+                                </div>
+                                <button
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold active:scale-95 duration-150 ${
+                                        permit.status?.toLowerCase().includes('approved') ? 'bg-secondary text-on-secondary' :
+                                        'bg-surface-container-high text-on-surface'
+                                    }`}
+                                >
+                                    {permit.status?.toLowerCase().includes('approved') ? 'Download' :
+                                     permit.status?.toLowerCase().includes('review') ? 'View Details' : 'Fix Issues'}
+                                </button>
+                              </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Permits List */}
-                <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-100">
-                    <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                        <div className="flex items-center">
-                            <FileText className="text-blue-500 mr-2" />
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">Permit Applications</h3>
-                        </div>
-                        <button
-                            onClick={handleCreatePermit}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
-                        >
-                            <Plus className="w-4 h-4 mr-1" /> New Permit
-                        </button>
-                    </div>
-
-                    <ul className="divide-y divide-gray-200">
-                        {permits.length === 0 ? (
-                            <li className="p-6 text-center text-gray-500">No permits found. Create one to get started.</li>
-                        ) : (
-                            permits.map(permit => (
-                                <li key={permit.id}>
-                                    <Link to={`/permit/${permit.id}`} className="block hover:bg-gray-50 px-6 py-4 transition duration-150">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex flex-col">
-                                                <p className="text-sm font-medium text-blue-600 truncate">{permit.title}</p>
-                                                <p className="text-xs text-gray-500 mt-1">Submitted on {new Date(permit.created_at).toLocaleDateString()}</p>
-                                            </div>
-                                            <div className="flex items-center">
-                                                {getStatusBadge(permit.status)}
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </li>
-                            ))
-                        )}
-                    </ul>
-                </div>
-            </div>
+                          </div>
+                      ))
+                  )}
+                </section>
+            </>
         )}
       </main>
+
+      <BottomNav />
     </div>
   );
 }
