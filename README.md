@@ -123,3 +123,17 @@ This demo is *NOT* endorsed by Google or Google Cloud. The repo is intended for 
 ## License
 
 This project is licensed under the terms of the [LICENSE](./LICENSE) file.
+
+### 5. Setup the Assessor MCP Server
+
+Open a new terminal:
+```bash
+cd assessor-mcp-server
+uv sync
+```
+
+Start the MCP server:
+```bash
+make start
+# Runs on http://127.0.0.1:8002
+```

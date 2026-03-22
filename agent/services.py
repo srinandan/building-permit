@@ -29,6 +29,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.tools import load_memory
+from google.adk.tools.mcp_tool import McpToolset, SseConnectionParams
 from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 
@@ -153,11 +154,16 @@ class AIService:
                      callback_context._invocation_context.session
                  )
 
+             assessor_mcp_url = os.getenv("ASSESSOR_MCP_SERVER_URL", "http://0.0.0.0:8002/sse")
+             mcp_toolset = McpToolset(
+                 connection_params=SseConnectionParams(url=assessor_mcp_url)
+             )
+
              agent = LlmAgent(
                  name="plan_analyzer",
                  model=self.model_name,
                  instruction=prompt,
-                 tools=[load_memory],
+                 tools=[load_memory, mcp_toolset],
                  output_schema=PlanAnalysisResponse,
                  after_agent_callback=auto_save_session_to_memory_callback
              )
