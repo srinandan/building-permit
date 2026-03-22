@@ -62,7 +62,7 @@ export function Dashboard() {
             try {
               const newPropRes = await axios.post(`${API_URL}/api/users/${user.id}/properties`, {
                   address: "123 Main St",
-                  city: "Santa Clara",
+                  city: "San Paloma",
                   zip_code: "95050"
               });
               props = [newPropRes.data];
@@ -170,9 +170,9 @@ export function Dashboard() {
               <span className="material-symbols-outlined">menu</span>
             </button>
             <div className="flex items-center gap-2">
-              <img src="/scc_logo.jpg" alt="Santa Clara County Logo" className="h-8 w-8 object-contain rounded-full bg-white shadow-sm" />
+              <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-8 w-8 object-contain rounded-full bg-white shadow-sm" />
               <h1 className="text-lg sm:text-xl font-black text-blue-800 dark:text-blue-400 uppercase tracking-tight font-['Inter']">
-                Santa Clara County
+                San Paloma County Permit Hub
               </h1>
             </div>
           </div>

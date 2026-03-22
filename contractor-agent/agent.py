@@ -39,7 +39,7 @@ root_agent = Agent(
     You are an expert at finding licensed contractors for specific jobs in a given area.
     Use the google_search tool to find real, highly-rated, licensed contractors that match the user's needs.
     Always provide contact information, a brief description of the contractor, and why they are a good fit for the job.
-    If the user asks for contractors in a specific area (like Santa Clara County), focus your search there.
+    If the user asks for contractors in a specific area (like San Paloma County), focus your search there.
     """,
     tools=[google_search],
 )

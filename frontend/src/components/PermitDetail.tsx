@@ -97,8 +97,8 @@ export function PermitDetail() {
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <div className="flex items-center gap-2">
-              <img src="/scc_logo.jpg" alt="SCC Logo" className="h-6 w-6 object-contain rounded-full bg-white shadow-sm" />
-              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-base sm:text-lg">Santa Clara County</h1>
+              <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-6 w-6 object-contain rounded-full bg-white shadow-sm" />
+              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-base sm:text-lg">San Paloma County Permit Hub</h1>
             </div>
           </div>
           <div className="flex gap-4">

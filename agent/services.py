@@ -131,10 +131,10 @@ class AIService:
         try:
              # Create a prompt that asks the model to output structured data
              prompt = """
-             You are an expert Building Code Compliance Inspector for Santa Clara County, California.
+             You are an expert Building Code Compliance Inspector for San Paloma County, California.
              Review the provided building plan PDF document (which may contain text and architectural drawings).
 
-             Check the plans against the California Building Standards Code (Title 24) and Santa Clara County specific local reach codes (like CalGreen and All-Electric requirements).
+             Check the plans against the California Building Standards Code (Title 24) and San Paloma County specific local reach codes (like CalGreen and All-Electric requirements).
 
              Analyze the document to identify:
              1. Elements that comply with the codes and are approved.
@@ -252,7 +252,7 @@ class AIService:
             # We construct a prompt with context and pass it to the agent.
 
             system_instruction = """
-            You are a helpful assistant specialized in building codes for Santa Clara County.
+            You are a helpful assistant specialized in building codes for San Paloma County.
             You are helping a user understand a specific building plan violation and how to fix it.
             """
 

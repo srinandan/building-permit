@@ -25,7 +25,7 @@ def create_fake_building_plan(filename):
 
     # Details
     c.setFont("Helvetica", 12)
-    c.drawString(100, height - 150, "Project Address: 123 Main St, Santa Clara, CA 95050")
+    c.drawString(100, height - 150, "Project Address: 123 Main St, San Paloma, CA 95050")
     c.drawString(100, height - 170, "Project Type: Single Family Home Addition")
     c.drawString(100, height - 190, "Square Footage: 1,200 sq ft addition")
 
