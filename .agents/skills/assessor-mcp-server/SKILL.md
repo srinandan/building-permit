@@ -1,7 +1,7 @@
 # Assessor MCP Server Skill
 
 ## Overview
-This skill implements a fake Santa Clara County Assessor API exposed as an MCP (Model Context Protocol) Server. It runs as a standalone Python microservice and communicates with the AI agent using Server-Sent Events (SSE).
+This skill implements a fake San Paloma County Assessor API exposed as an MCP (Model Context Protocol) Server. It runs as a standalone Python microservice and communicates with the AI agent using Server-Sent Events (SSE).
 
 ## Tools Provided
 - `lookup_parcel(apn: str) -> dict`: Looks up property details by Assessor's Parcel Number (APN).

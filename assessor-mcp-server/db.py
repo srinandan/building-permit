@@ -54,13 +54,13 @@ def init_db():
 
 def seed_data(c):
     parcels = [
-        ("123-45-678", "123 Main St, Santa Clara, CA 95050", 6000, "John Doe", 1200000),
+        ("123-45-678", "123 Main St, San Paloma, CA 95050", 6000, "John Doe", 1200000),
         ("987-65-432", "456 Elm St, San Jose, CA 95112", 8000, "Jane Smith", 1500000)
     ]
     c.executemany('INSERT INTO parcels VALUES (?,?,?,?,?)', parcels)
 
     zoning_by_address = [
-        ("123 Main St, Santa Clara, CA 95050", "R-1"),
+        ("123 Main St, San Paloma, CA 95050", "R-1"),
         ("456 Elm St, San Jose, CA 95112", "R-1-8")
     ]
     c.executemany('INSERT INTO zoning_by_address VALUES (?,?)', zoning_by_address)
