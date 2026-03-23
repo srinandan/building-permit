@@ -1,0 +1,7 @@
+__pycache__
+.venv
+assessor.db
+.cloudbuild
+.gitignore
+Makefile
+README.md
