@@ -22,7 +22,11 @@ This repository implements an agentic AI system designed to automate the review 
 - **Contextual Retrieval:** Employs Vertex AI RAG Engine to retrieve relevant sections from the California Building Standards Code (Title 24) and San Paloma County local reach codes.
 - **Compliance Mapping:** Matches extracted plan data against retrieved regulatory text to identify specific violations or approved elements.
 - **Actionable Feedback:** Generates structured reports that include exact code sections, detailed descriptions of non-compliance, and specific suggestions for remediation.
-- **Agentic Memory & Context:** Utilizes Google ADK (Agent Development Kit) to maintain conversational state and long-term memory across sessions using Vertex AI Session and MemoryBank services.
+
+### Shared Infrastructure & Persistent Context
+- **Vertex AI Session Management:** Centralized session service for persistent, scalable conversation history across all agents in the ecosystem.
+- **Vertex AI Memorybank:** Long-term memory service allowing agents to retrieve and reference past interactions, violations, and decisions (facilitated by the `agent-engine`).
+- **Agentic Memory (ADK):** Utilizes Google ADK (Agent Development Kit) to maintain conversational state and long-term memory across sessions.
 
 ### Agent Interoperability (A2A)
 - **Protocol Compliance:** Adheres to the Agent-to-Agent (A2A) Protocol Specification for seamless communication between different AI agents.
@@ -32,6 +36,11 @@ This repository implements an agentic AI system designed to automate the review 
 ---
 
 ## 2. Technical Stack & Infrastructure Skills
+
+### Assessor MCP Server (Data Retrieval)
+- **MCP Protocol:** Implements the Model Context Protocol (MCP) to expose property data as structured tools.
+- **Tool Integration:** Provides `lookup_parcel`, `get_zoning_classification`, and `get_setback_requirements` tools via an SSE (Server-Sent Events) connection.
+- **Data Management:** Capabilities to `add_parcel`, `rezone_address`, and `add_zoning_rule` to the county's assessor database.
 
 ### Microservices Architecture
 - **Polyglot Development:** Seamless integration between a Go-based API Gateway, a Python-based AI Agent, and a React-based Frontend.
@@ -58,13 +67,9 @@ This repository implements an agentic AI system designed to automate the review 
 ## 4. Developer & Operational Skills
 
 ### Automated Workflows
-- **Standardized Tooling:** Comprehensive `Makefile` for unified management across services (start, build, test).
+- **Standardized Tooling:** Comprehensive `Makefile` for unified management across services (start, build, test, install, stop).
 - **Package Management:** Uses modern dependency managers: `uv` for Python, `npm` for Frontend, and `go mod` for the API.
-- **CI/CD Ready:** Includes GitHub Actions for CodeQL security scanning.
-
-### Security & Standards
-- **Standard Operating Procedures:** Adheres to security best practices for handling user-uploaded PDFs and GCP service credentials.
-- **Clean Code:** TypeScript for type-safe frontend development and GORM for robust database interactions.
+- **CI/CD Ready:** Includes GitHub Actions for CodeQL security scanning and automated CI.
 
 ---
 
@@ -73,4 +78,4 @@ This repository implements an agentic AI system designed to automate the review 
 2. **Issue Tracking:** View a list of specific violations mapped to the legal code.
 3. **History Management:** Maintain a database of property permits and multiple submission versions.
 4. **Interactive Clarification:** Ask follow-up questions about specific violations via an integrated chat interface powered by conversational AI.
-5. **Local Development:** Spin up the entire stack locally for testing and customization.
+5. **Local Development:** Spin up the entire stack locally for testing and customization using `make all`.
