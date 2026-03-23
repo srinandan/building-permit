@@ -1,34 +1,31 @@
 # Contractor Agent
 
-The **Contractor Agent** is an AI agent that simulates a building contractor. It interacts with the **Compliance Agent** and end-users to discuss building plans, clarify violations, and propose structural remediation based on regulatory feedback.
+This directory contains the Python-based AI agent that simulates a building contractor. It interacts with the main compliance agent (and end-users) to discuss building plans, clarify violations, and propose structural remediation based on regulatory feedback.
 
-## Features
-- **A2A Integration:** Complies with the **Agent-to-Agent (A2A)** protocol for seamless communication with other AI agents.
-- **Contractor Discovery:** Capable of finding licensed contractors based on specific job needs and locations.
-- **Remediation Planning:** Proposes specific structural fixes to resolve non-compliance issues found by the Compliance Agent.
-- **Tool Use:** Uses **Google Search** to find real-world contractor data and license information.
-
-## Tech Stack
-- **Framework:** FastAPI + `a2a-sdk`
-- **AI Stack:** Vertex AI (Gemini 2.5 Flash)
-- **Dependency Management:** `uv`
-
-## Local Development
+## Setup & Local Development
 
 ### Prerequisites
 - Python 3.12+
-- `uv` installed.
+- `uv` (for fast Python package management)
 
-### Setup and Execution
-1.  **Install dependencies:**
-    ```bash
-    make install
-    ```
-2.  **Start the agent:**
-    ```bash
-    make start
-    ```
-    The agent will be available at `http://localhost:8001`.
+### Installation
+
+To install dependencies using `uv`, run the following command from this directory:
+
+```bash
+uv sync
+```
+
+### Starting the Server
+
+The contractor agent is built with FastAPI. You can start the local development server using the provided `Makefile`:
+
+```bash
+make start
+```
+
+This will run `uvicorn main:app --reload --port 8001`, making the agent accessible at `http://127.0.0.1:8001`.
 
 ## Integration
-The agent exposes an A2A-compliant interface via its `.well-known/agent-card.json` endpoint. It is designed to be discovered and called by the API Gateway or other compliant agents in the San Paloma County ecosystem.
+
+The main API gateway (written in Go) expects this agent to be running and proxies requests to it. Make sure both the main `agent` and this `contractor-agent` are running simultaneously when testing the full system locally.

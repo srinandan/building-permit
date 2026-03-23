@@ -1,7 +1,7 @@
-.PHONY: all frontend api agent contractor-agent assessor-mcp-server stop clean
+.PHONY: all frontend api agent contractor-agent assessor-mcp-server clean
 
 # Running 'all' will now trigger all targets in the background
-all: 
+all:
 	@$(MAKE) frontend &
 	@$(MAKE) api &
 	@$(MAKE) agent &
@@ -22,14 +22,7 @@ contractor-agent:
 	$(MAKE) -C contractor-agent start
 
 assessor-mcp-server:
-	$(MAKE) -C assessor-mcp-server start
-
-stop:
-	-pkill -f "make -C frontend"
-	-pkill -f "make -C api"
-	-pkill -f "make -C agent"
-	-pkill -f "make -C contractor-agent"
-	-pkill -f "make -C assessor-mcp-server"
+	$(MAKE) -C assessor-mcp-server
 
 clean:
 	$(MAKE) -C frontend clean
