@@ -1,7 +1,7 @@
 [project]
-name = "agent"
+name = "building-permit-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI agent for reviewing building plans against California Building Standards Code."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

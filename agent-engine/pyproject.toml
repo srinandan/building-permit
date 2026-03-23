@@ -1,7 +1,7 @@
 [project]
-name = "agent-engine"
+name = "building-permit-agent-engine"
 version = "0.1.0"
-description = ""
+description = "Vertex AI Agent Engine deployment for building permit review."
 authors = [
     {name = "Your Name", email = "your@email.com"},
 ]

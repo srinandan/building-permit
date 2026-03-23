@@ -1,7 +1,7 @@
 [project]
-name = "agent"
+name = "building-permit-contractor-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI agent for finding licensed contractors in San Paloma County."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
