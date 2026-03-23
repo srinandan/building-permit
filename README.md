@@ -9,6 +9,8 @@
 
 An Agentic application to review building plans against the California Building Standards Code and San Paloma County reach codes.
 
+> **Note**: San Paloma is a fictitious county used for the purpose of this demonstration.
+
 ## Architecture
 
 This is a monorepo containing three microservices:
