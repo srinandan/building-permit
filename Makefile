@@ -1,4 +1,4 @@
-.PHONY: all install frontend api agent contractor-agent assessor-mcp-server stop clean
+.PHONY: all install frontend api agent contractor-agent assessor-mcp-server stop clean deploy
 
 # Running 'all' will now trigger all targets in the background
 all: 
@@ -30,6 +30,13 @@ contractor-agent:
 
 assessor-mcp-server:
 	$(MAKE) -C assessor-mcp-server start
+
+deploy:
+	$(MAKE) -C frontend deploy
+	$(MAKE) -C api deploy
+	$(MAKE) -C agent deploy
+	$(MAKE) -C contractor-agent deploy
+	$(MAKE) -C assessor-mcp-server deploy
 
 stop:
 	-pkill -f "make -C frontend"

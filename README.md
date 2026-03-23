@@ -74,6 +74,13 @@ Start all microservices in the background:
 make all
 ```
 
+### 3. Deployment
+
+To deploy all components to Google Cloud Run:
+```bash
+make deploy
+```
+
 Stop all background microservices:
 ```bash
 make stop

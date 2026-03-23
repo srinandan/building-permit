@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: install start clean
+.PHONY: install start clean deploy
 
 install:
 	uv sync
@@ -22,3 +22,6 @@ start:
 
 clean:
 	rm -rf .venv
+
+deploy:
+	gcloud builds submit --config .cloudbuild/deploy.yaml --substitutions _COMMIT_SHA=$(shell git rev-parse --short HEAD) .
