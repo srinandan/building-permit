@@ -35,6 +35,11 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.cloud import logging as google_cloud_logging
 
+from google.adk.cli.fast_api import get_fast_api_app
+
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 from agent import app as adk_app
 
 # Configure logging
@@ -43,7 +48,14 @@ logger = logging.getLogger(__name__)
 
 PORT = os.getenv("PORT", 8080)
 
+allow_origins = (
+    os.getenv("ALLOW_ORIGINS", "").split(",") if os.getenv("ALLOW_ORIGINS") else None
+)
+
+AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 _, project_id = google.auth.default()
+bucket_name = f"gs://{project_id}"
 
 runner = Runner(
     app=adk_app,
@@ -83,11 +95,21 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-app = FastAPI(
-    title="contractor-agent",
-    description="API for interacting with the Contractor Agent",
+app: FastAPI = get_fast_api_app(
+    agents_dir=AGENT_DIR,
+    web=False,
+    artifact_service_uri=bucket_name,
+    allow_origins=allow_origins,
+    trace_to_cloud=False,
+    otel_to_cloud=True,
     lifespan=lifespan,
 )
+
+app.title = "contractor-agent"
+app.description = "API for interacting with the Contractor Agent"
+
+HTTPXClientInstrumentor().instrument()
+FastAPIInstrumentor.instrument_app(app)
 
 class Feedback(BaseModel):
     rating: int

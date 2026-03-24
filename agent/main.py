@@ -19,17 +19,37 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from services import ai_service
 
+from google.adk.cli.fast_api import get_fast_api_app
+
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from telemetry import setup_telemetry
+# from telemetry import setup_telemetry
 
 # Load environment variables
 load_dotenv()
 
 # Initialize OpenTelemetry
-setup_telemetry()
+# setup_telemetry()
 
-app = FastAPI(title="Building Plan Compliance Agent")
+allow_origins = (
+    os.getenv("ALLOW_ORIGINS", "").split(",") if os.getenv("ALLOW_ORIGINS") else None
+)
 
+AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+bucket_name = f"gs://{os.getenv("GOOGLE_CLOUD_PROJECT")}"
+
+app: FastAPI = get_fast_api_app(
+    agents_dir=AGENT_DIR,
+    web=False,
+    artifact_service_uri=bucket_name,
+    allow_origins=allow_origins,
+    trace_to_cloud=False,
+    otel_to_cloud=True,
+)
+
+app.title = "Building Plan Compliance Agent"
+
+HTTPXClientInstrumentor().instrument()
 FastAPIInstrumentor.instrument_app(app)
 
 class Violation(BaseModel):
