@@ -71,7 +71,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},DB_NAME=/app/data/building_plans.db,AGENT_URL=${_AGENT_URL},CONTRACTOR_AGENT_URL=${_CONTRACTOR_AGENT_URL}'
+      - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},DB_NAME=/app/data/building_plans.db,AGENT_URL=https://building-permit-agent-${PROJECT_NUMBER}.${_REGION}.run.app,CONTRACTOR_AGENT_URL=https://building-permit-contractor-agent-${PROJECT_NUMBER}.${_REGION}.run.app'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"
@@ -92,8 +92,6 @@ substitutions:
   _ARTIFACT_REGISTRY_REPO_NAME: building-permit
   _CONTAINER_NAME: building-permit-api
   _COMMIT_SHA: latest
-  _AGENT_URL: https://building-permit-agent-432423772502.us-central1.run.app
-  _CONTRACTOR_AGENT_URL: https://building-permit-contractor-agent-432423772502.us-central1.run.app
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}

@@ -58,7 +58,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'VITE_API_URL=${_API_URL},GOOGLE_CLOUD_LOCATION=${_REGION}'
+      - 'API_BACKEND_SERVICE_URL=https://building-permit-api-${PROJECT_NUMBER}.${_REGION}.run.app,GOOGLE_CLOUD_LOCATION=${_REGION}'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=3000,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"
@@ -75,7 +75,6 @@ substitutions:
   _ARTIFACT_REGISTRY_REPO_NAME: building-permit
   _CONTAINER_NAME: building-permit-frontend
   _COMMIT_SHA: latest
-  _API_URL: https://building-permit-api-${PROJECT_NUMBER}.${_REGION}.run.app
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}

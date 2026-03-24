@@ -20,7 +20,7 @@ import { useAuthStore } from '../store';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-const API_URL = (window as any).VITE_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = '';
 
 export function NewPermit() {
   const { user, currentProperty } = useAuthStore();

@@ -29,7 +29,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import VertexAiSessionService
 from google.adk.memory import VertexAiMemoryBankService
 from google.adk.tools import load_memory
-from google.adk.tools.mcp_tool import McpToolset, SseConnectionParams
+from google.adk.tools.mcp_tool import McpToolset, StreamableHTTPConnectionParams
 from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 
@@ -154,9 +154,9 @@ class AIService:
                      callback_context._invocation_context.session
                  )
 
-             assessor_mcp_url = os.getenv("ASSESSOR_MCP_SERVER_URL", "http://127.0.0.1:8002/sse")
+             assessor_mcp_url = os.getenv("ASSESSOR_MCP_SERVER_URL", "http://127.0.0.1:8002")
              mcp_toolset = McpToolset(
-                 connection_params=SseConnectionParams(url=assessor_mcp_url)
+                 connection_params=StreamableHTTPConnectionParams(url=assessor_mcp_url)
              )
 
              agent = LlmAgent(

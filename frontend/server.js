@@ -24,24 +24,26 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+import { createProxyMiddleware } from 'http-proxy-middleware';
+const apiBackendUrl = process.env.API_BACKEND_SERVICE_URL || 'http://localhost:8080';
+
+// Proxy API requests to backend
+// Strip trailing /api to avoid double-up with pathFilter if they pass it with /api
+app.use(createProxyMiddleware({
+    pathFilter: '/api',
+    target: apiBackendUrl.replace(/\/api$/, ''),
+    changeOrigin: true,
+}));
+
 // Serve static files from the dist directory
 const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
+app.use(express.static(distPath, { index: false }));
 
 import fs from 'fs';
 
-// Handle React Router SPA routing: send all unmatched requests to index.html with injected VITE_API_URL
-app.get('/{*splat}', (req, res) => {
-  const indexPath = path.join(distPath, 'index.html');
-  try {
-    let html = fs.readFileSync(indexPath, 'utf-8');
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080';
-    // Inject the variable into the head tag
-    html = html.replace('</head>', `<script>window.VITE_API_URL="${apiUrl}"</script></head>`);
-    res.send(html);
-  } catch (err) {
-    res.status(500).send("Internal Server Error: Unable to read index.html");
-  }
+// Handle React Router SPA routing: send all unmatched requests to index.html
+app.get(/.*$/, (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {

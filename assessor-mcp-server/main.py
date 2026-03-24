@@ -21,7 +21,7 @@ from db import get_connection, init_db
 init_db()
 
 # Initialize FastMCP Server
-mcp_server = FastMCP(name="assessor")
+mcp_server = FastMCP(name="assessor", host="0.0.0.0")
 
 @mcp_server.tool(
     annotations=ToolAnnotations(
@@ -157,7 +157,7 @@ def add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_
     finally:
         conn.close()
 
-app = mcp_server.sse_app
+app = mcp_server.streamable_http_app()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8002, reload=True)

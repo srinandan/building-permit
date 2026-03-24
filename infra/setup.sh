@@ -40,6 +40,7 @@ APIS=(
   "artifactregistry.googleapis.com"
   "run.googleapis.com"
   "cloudbuild.googleapis.com"
+  "cloudtrace.googleapis.com"
 )
 
 for api in "${APIS[@]}"; do
@@ -66,6 +67,8 @@ ROLES=(
   "roles/storage.objectCreator"
   "roles/storage.admin"
   "roles/telemetry.writer"
+  "roles/cloudtrace.agent"
+  "roles/telemetry.metricsWriter"
 )
 
 for role in "${ROLES[@]}"; do

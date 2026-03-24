@@ -21,7 +21,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { Loader2 } from 'lucide-react';
 
-const API_URL = (window as any).VITE_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = '';
 
 export function PermitDetail() {
   const { id } = useParams<{ id: string }>();
