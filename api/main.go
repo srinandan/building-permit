@@ -32,6 +32,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spc/building-plan-api/pkg/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -107,7 +108,8 @@ func InitDB() {
 
 // Shared HTTP client for agent requests
 var agentHTTPClient = &http.Client{
-	Timeout: 60 * time.Second, // Agent analysis can take a while
+	Transport: otelhttp.NewTransport(http.DefaultTransport),
+	Timeout:   60 * time.Second, // Agent analysis can take a while
 }
 
 // --- Handlers ---
@@ -258,15 +260,14 @@ func ChatHandler(c *gin.Context) {
 	defer c.Request.Body.Close()
 
 	// Forward the JSON payload to the Python agent
-	req, err := http.NewRequest("POST", agentURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", agentURL, bytes.NewBuffer(body))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := agentHTTPClient.Do(req)
 	if err != nil {
 		log.Printf("Error calling agent chat endpoint: %v", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
@@ -304,15 +305,14 @@ func ContractorChatHandler(c *gin.Context) {
 	defer c.Request.Body.Close()
 
 	// Forward the JSON payload to the Python agent
-	req, err := http.NewRequest("POST", agentURL, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", agentURL, bytes.NewBuffer(body))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := agentHTTPClient.Do(req)
 	if err != nil {
 		log.Printf("Error calling agent contractor-chat endpoint: %v", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to communicate with AI agent"})
@@ -427,7 +427,7 @@ func main() {
 		}
 
 		// Create a new HTTP POST request to the Python agent
-		req, err := http.NewRequest("POST", agentURL, body)
+		req, err := http.NewRequestWithContext(c.Request.Context(), "POST", agentURL, body)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request to agent"})
 			return
