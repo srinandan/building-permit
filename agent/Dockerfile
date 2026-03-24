@@ -28,6 +28,12 @@ RUN uv pip install --system -r pyproject.toml
 # Copy application code
 COPY . .
 
+# OpenTelemetry Configuration
+ENV OTEL_SERVICE_NAME=building-permit-agent
+ENV ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false
+ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+ENV OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT
+
 EXPOSE 8080
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

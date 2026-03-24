@@ -15,6 +15,19 @@
 FROM node:20-alpine
 WORKDIR /app
 
+# OpenTelemetry Configuration
+ARG PROJECT_ID
+ENV VITE_PROJECT_ID=$PROJECT_ID
+
+ARG API_KEY
+ENV VITE_OTLP_API_KEY=$API_KEY
+
+ENV OTEL_SERVICE_NAME=building-permit-frontend
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=https://telemetry.googleapis.com
+ENV VITE_OTLP_EXPORTER_URL=https://telemetry.googleapis.com/v1/traces
+
+
 # Copy package files and install all dependencies (including devDependencies for the build)
 COPY package*.json ./
 RUN npm install

@@ -20,6 +20,59 @@ from db import get_connection, init_db
 # Initialize database
 init_db()
 
+import os
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from google import auth
+from google.auth.transport.grpc import AuthMetadataPlugin
+import google.auth.transport.requests
+import grpc
+from opentelemetry.instrumentation.mcp import McpInstrumentor
+
+# --- OpenTelemetry Setup ---
+McpInstrumentor().instrument()
+
+try:
+    credentials, project_id = auth.default()
+except Exception:
+    credentials, project_id = None, None
+
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", project_id or "")
+
+if PROJECT_ID:
+    os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"gcp.project_id={PROJECT_ID}"
+
+os.environ.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "https://telemetry.googleapis.com")
+
+resource = Resource.create(
+    attributes={
+        SERVICE_NAME: "assessor-mcp-server",
+    }
+)
+
+try:
+    if credentials:
+        # Request used to refresh credentials upon expiry
+        request = auth.transport.requests.Request()
+        auth_metadata_plugin = AuthMetadataPlugin(credentials=credentials, request=request)
+        channel_creds = grpc.composite_channel_credentials(
+            grpc.ssl_channel_credentials(),
+            grpc.metadata_call_credentials(auth_metadata_plugin),
+        )
+        otlp_grpc_exporter = OTLPSpanExporter(credentials=channel_creds)
+    else:
+        otlp_grpc_exporter = OTLPSpanExporter()
+
+    tracer_provider = TracerProvider(resource=resource)
+    processor = BatchSpanProcessor(otlp_grpc_exporter)
+    tracer_provider.add_span_processor(processor)
+    trace.set_tracer_provider(tracer_provider)
+except Exception as e:
+    print(f"Failed to initialize OpenTelemetry: {e}")
+
 # Initialize FastMCP Server
 mcp_server = FastMCP(name="assessor", host="0.0.0.0")
 

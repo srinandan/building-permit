@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import { initTelemetry } from './telemetry';
+
+// Initialize telemetry before any other initialization
+initTelemetry();
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
