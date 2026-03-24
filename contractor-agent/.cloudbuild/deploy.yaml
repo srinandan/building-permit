@@ -59,7 +59,7 @@ steps:
       - "--image"
       - "${_REGION}-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO_NAME/$_CONTAINER_NAME:${_COMMIT_SHA}"
       - "--port"
-      - "8081"
+      - "8080"
       - "--cpu"
       - "1000m"
       - "--memory"
@@ -71,7 +71,7 @@ steps:
       - "--set-env-vars"
       - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME}'
       - "--startup-probe"
-      - 'initialDelaySeconds=30,tcpSocket.port=8081,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
+      - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"
       - "1"
       - "--allow-unauthenticated"
@@ -84,10 +84,10 @@ steps:
       - "--labels=appid=building-permit"
 
 substitutions:
-  _REGION: us-central1
+  _REGION: ${_REGION}
   _ARTIFACT_REGISTRY_REPO_NAME: building-permit
   _CONTAINER_NAME: building-permit-contractor-agent
-  _COMMIT_SHA: latest
+  _COMMIT_SHA: ${_COMMIT_SHA}
   _GEMINI_MODEL_NAME: gemini-2.5-flash
 
 images:

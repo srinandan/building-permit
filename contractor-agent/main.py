@@ -41,7 +41,7 @@ from agent import app as adk_app
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-PORT = os.getenv("PORT", 8081)
+PORT = os.getenv("PORT", 8080)
 
 _, project_id = google.auth.default()
 

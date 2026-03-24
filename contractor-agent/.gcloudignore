@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gcloudignore
+.dockerignore
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.python-version
+.cloudbuild/
