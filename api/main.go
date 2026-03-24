@@ -28,14 +28,10 @@ import (
 
 	"context"
 
-	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spc/building-plan-api/pkg/telemetry"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -239,30 +235,6 @@ type AgentResponse struct {
 	ApprovedElements []string      `json:"approved_elements"`
 }
 
-// --- OpenTelemetry Initialization ---
-
-func initTracer() (*sdktrace.TracerProvider, error) {
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		log.Println("GOOGLE_CLOUD_PROJECT not set, skipping OpenTelemetry initialization")
-		return nil, nil
-	}
-
-	exporter, err := texporter.New(texporter.WithProjectID(projectID))
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize exporter: %v", err)
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceName("building-plan-api"),
-		)),
-	)
-	otel.SetTracerProvider(tp)
-	return tp, nil
-}
 
 func ChatHandler(c *gin.Context) {
 	agentURL := os.Getenv("AGENT_URL")
@@ -362,14 +334,19 @@ func ContractorChatHandler(c *gin.Context) {
 // --- Main API Entrypoint ---
 
 func main() {
-	// Initialize OpenTelemetry Trace Provider
-	tp, err := initTracer()
+	// Initialize Telemetry
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		fmt.Println("Warning: GOOGLE_CLOUD_PROJECT not set. Telemetry might fail or use default.")
+	}
+
+	shutdown, err := telemetry.InitTelemetry(context.Background(), projectID, "building-plan-api")
 	if err != nil {
-		log.Printf("Warning: failed to initialize OpenTelemetry: %v\n", err)
-	} else if tp != nil {
+		log.Printf("Failed to initialize telemetry: %v", err)
+	} else {
 		defer func() {
-			if err := tp.Shutdown(context.Background()); err != nil {
-				log.Printf("Error shutting down tracer provider: %v", err)
+			if err := shutdown(context.Background()); err != nil {
+				log.Printf("Telemetry shutdown failed: %v", err)
 			}
 		}()
 	}

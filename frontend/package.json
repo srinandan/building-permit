@@ -11,6 +11,16 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@opentelemetry/context-zone": "^2.6.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/instrumentation": "^0.213.0",
+    "@opentelemetry/instrumentation-document-load": "^0.58.0",
+    "@opentelemetry/instrumentation-fetch": "^0.213.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.213.0",
+    "@opentelemetry/resources": "^2.6.0",
+    "@opentelemetry/sdk-trace-base": "^2.6.0",
+    "@opentelemetry/sdk-trace-web": "^2.6.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.6",
     "express": "^5.2.1",
