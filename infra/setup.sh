@@ -22,7 +22,7 @@ if [ -z "$GOOGLE_CLOUD_LOCATION" ]; then
 fi
 SERVICE_ACCOUNT_NAME="build-permit-sa"
 SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT_NAME}@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
-DATA_BUCKET="${GOOGLE_CLOUD_PROJECT}-building-permit-data"
+DB_BUCKET="${GOOGLE_CLOUD_PROJECT}-building-permit-db"
 
 echo "Using Project ID: $GOOGLE_CLOUD_PROJECT"
 echo "Using Location: $GOOGLE_CLOUD_LOCATION"
@@ -64,6 +64,7 @@ ROLES=(
   "roles/documentai.apiUser"
   "roles/storage.objectViewer"
   "roles/storage.objectCreator"
+  "roles/storage.admin"
   "roles/telemetry.writer"
 )
 
@@ -75,11 +76,11 @@ for role in "${ROLES[@]}"; do
 done
 
 # 4. Create GCS Bucket for Database if it doesn't exist
-if ! gsutil ls -b "gs://${DATA_BUCKET}" >/dev/null 2>&1; then
-  echo "Creating GCS bucket for database: $DATA_BUCKET in $GOOGLE_CLOUD_LOCATION..."
-  gsutil mb -l "$GOOGLE_CLOUD_LOCATION" "gs://${DATA_BUCKET}"
+if ! gsutil ls -b "gs://${DB_BUCKET}" >/dev/null 2>&1; then
+  echo "Creating GCS bucket for database: $DB_BUCKET in $GOOGLE_CLOUD_LOCATION..."
+  gsutil mb -l "$GOOGLE_CLOUD_LOCATION" "gs://${DB_BUCKET}"
 else
-  echo "GCS bucket $DATA_BUCKET already exists."
+  echo "GCS bucket $DB_BUCKET already exists."
 fi
 
 # 5. Create Artifact Registry Repository if it doesn't exist
