@@ -31,6 +31,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+const otelServiceName = "building-permit-api"
+
 // --- Main API Entrypoint ---
 
 func main() {
@@ -57,13 +59,13 @@ func main() {
 	r := gin.Default()
 
 	// Add OpenTelemetry middleware
-	r.Use(otelgin.Middleware("building-plan-api"))
+	r.Use(otelgin.Middleware(otelServiceName))
 
 	// Setup CORS to allow our frontend to make requests
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"}, // in production restrict this to frontend URL
 		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -95,7 +97,7 @@ func main() {
 		port = "8080"
 	}
 
-	wrappedHandler := otelhttp.NewHandler(r, "building-plan-api")
+	wrappedHandler := otelhttp.NewHandler(r, otelServiceName)
 
 	fmt.Printf("Starting API Gateway with OTel HTTP Server instrumentation on :%s\n", port)
 	if err := http.ListenAndServe(":"+port, wrappedHandler); err != nil {
