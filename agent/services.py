@@ -89,8 +89,8 @@ class AIService:
         servers = self.registry.list_mcp_servers()
         mcp_server_name = None
         for s in servers.get("mcpServers", []):
-            if s.get("displayName") == "Assessor MCP Server":
-                logger.info(f"Found Assessor MCP Server: {s['name']}")
+            if s.get("displayName") == "assessor-mcp-server":
+                logger.info(f"Found assessor-mcp-server: {s['name']}")
                 mcp_server_name = s["name"]
                 break
 

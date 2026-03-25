@@ -69,7 +69,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME},APP_URL=https://${_CONTAINER_NAME}-${PROJECT_NUMBER}.${_REGION}.run.app/a2a/building_permit_contractor_agent'
+      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME},APP_URL=https://${_CONTAINER_NAME}-${PROJECT_NUMBER}.${_REGION}.run.app'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"
