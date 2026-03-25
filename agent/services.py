@@ -155,13 +155,10 @@ class AIService:
                  )
 
              registry = AgentRegistry(project_id=self.project_id, location=self.location)
-             servers = registry.list_mcp_servers()
+             servers = registry.list_mcp_servers(filter_str="displayName:'Assessor MCP Server'").get("mcpServers", [])
              mcp_server_name = None
-             for s in servers.get("mcpServers", []):
-                 if s.get("displayName") == "Assessor MCP Server":
-                     print("Found Assessor MCP Server: ", s["name"])
-                     mcp_server_name = s["name"]
-                     break
+             if servers:
+                mcp_server_name = servers[0].get("name")
 
              if not mcp_server_name:
                  raise ValueError("Assessor MCP Server not found in Agent Registry")
@@ -169,13 +166,10 @@ class AIService:
              mcp_toolset = registry.get_mcp_toolset(mcp_server_name)
 
              # Lookup ContractorAgent
-             agents_list = registry.list_agents()
+             agents_list = registry.list_agents(filter_str="displayName:'ContractorAgent'").get("agents", [])
              contractor_agent = None
-             for a in agents_list.get("agents", []):
-                 if a.get("displayName") == "ContractorAgent":
-                     print("Found ContractorAgent: ", a["name"])
-                     contractor_agent = registry.get_remote_a2a_agent(a["name"])
-                     break
+             if agents_list:
+                contractor_agent = registry.get_remote_a2a_agent(agents_list[0].get("name"))
 
              if not contractor_agent:
                  raise ValueError("ContractorAgent not found in Agent Registry")
