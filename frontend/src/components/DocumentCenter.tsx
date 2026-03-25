@@ -20,6 +20,7 @@ import { useAuthStore } from '../store';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { Loader2, X, Send } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 const API_URL = '';
 
@@ -343,7 +344,7 @@ export function DocumentCenter() {
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={closeChat}></div>
 
           <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 shadow-2xl">
-            <div className="pointer-events-auto w-screen max-w-md transform transition-all">
+            <div className="pointer-events-auto w-screen max-w-2xl transform transition-all">
               <div className="flex h-full flex-col bg-white shadow-xl">
                 {/* Header */}
                 <div className="bg-primary px-4 py-6 sm:px-6">
@@ -380,7 +381,15 @@ export function DocumentCenter() {
                             ? 'bg-primary text-white rounded-tr-sm'
                             : 'bg-white border border-surface-container text-on-surface rounded-tl-sm'
                         }`}>
-                          <div className="whitespace-pre-wrap">{msg.content}</div>
+                          {msg.role === 'user' ? (
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                          ) : (
+                            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5">
+                              <ReactMarkdown>
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
