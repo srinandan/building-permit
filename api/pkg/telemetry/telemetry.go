@@ -20,19 +20,19 @@ import (
 	"log/slog"
 	"os"
 
-	//texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	// texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	mexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
+	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/contrib/detectors/gcp"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -41,7 +41,6 @@ import (
 // InitTelemetry initializes OpenTelemetry for Tracing and Metrics using Google Cloud exporters.
 // It returns a shutdown function that should be called on service exit.
 func InitTelemetry(ctx context.Context, projectID, serviceName string) (func(context.Context) error, error) {
-
 	// Configure gRPC client with Google Application Default Credentials
 	creds, err := google.FindDefaultCredentials(ctx)
 	if err != nil {

@@ -49,7 +49,7 @@ os.environ.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "https://telemetry.googleap
 
 resource = Resource.create(
     attributes={
-        SERVICE_NAME: "assessor-mcp-server",
+        SERVICE_NAME: "building-permit-assessor-mcp-server",
     }
 )
 
@@ -74,7 +74,7 @@ except Exception as e:
     print(f"Failed to initialize OpenTelemetry: {e}")
 
 # Initialize FastMCP Server
-mcp_server = FastMCP(name="assessor", host="0.0.0.0")
+mcp_server = FastMCP(name="building-permit-assessor-mcp-server", host="0.0.0.0")
 
 @mcp_server.tool(
     annotations=ToolAnnotations(

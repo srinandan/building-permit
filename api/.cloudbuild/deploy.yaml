@@ -71,7 +71,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},DB_NAME=/app/data/building_plans.db,AGENT_URL=https://building-permit-agent-${PROJECT_NUMBER}.${_REGION}.run.app,CONTRACTOR_AGENT_URL=https://building-permit-contractor-agent-${PROJECT_NUMBER}.${_REGION}.run.app'
+      - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},DB_NAME=/app/data/building_plans.db,AGENT_URL=https://building-permit-agent-${PROJECT_NUMBER}.${_REGION}.run.app'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"

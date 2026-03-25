@@ -33,6 +33,9 @@ from google.adk.tools.mcp_tool import McpToolset, StreamableHTTPConnectionParams
 from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 
+from a2a.client import ClientConfig, ClientFactory
+from a2a.types import TransportProtocol
+
 
 from google.adk.integrations.agent_registry import AgentRegistry
 
@@ -80,6 +83,36 @@ class AIService:
             client_options = {"api_endpoint": f"{self.docai_location}-documentai.googleapis.com"}
             self.docai_client = documentai.DocumentProcessorServiceClient(client_options=client_options)
             self.docai_processor_name = self.docai_client.processor_path(self.project_id, self.docai_location, self.docai_processor_id)
+        
+        # Find Registry Assets
+        self.registry = AgentRegistry(project_id=self.project_id, location=self.location)
+        servers = self.registry.list_mcp_servers()
+        mcp_server_name = None
+        for s in servers.get("mcpServers", []):
+            if s.get("displayName") == "Assessor MCP Server":
+                logger.info(f"Found Assessor MCP Server: {s['name']}")
+                mcp_server_name = s["name"]
+                break
+
+        if not mcp_server_name:
+            # throw error
+            raise ValueError("Assessor MCP Server not found in Agent Registry")
+        
+        self.mcp_server_name = mcp_server_name
+
+        # Lookup ContractorAgent
+        agents_list = self.registry.list_agents()
+        a2a_server_name = None
+        for a in agents_list.get("agents", []):
+            if a.get("displayName") == "building_permit_contractor_agent":
+                logger.info(f"Found building_permit_contractor_agent: {a['name']}")
+                a2a_server_name = a['name']
+                break
+
+        if not a2a_server_name:
+            raise ValueError("building_permit_contractor_agent not found in Agent Registry")
+        
+        self.contractor_agent_name = a2a_server_name
 
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
         """Use Document AI to extract text from a PDF."""
@@ -154,32 +187,13 @@ class AIService:
                      callback_context._invocation_context.session
                  )
 
-             registry = AgentRegistry(project_id=self.project_id, location=self.location)
-             servers = registry.list_mcp_servers(filter_str="displayName:'Assessor MCP Server'").get("mcpServers", [])
-             mcp_server_name = None
-             if servers:
-                mcp_server_name = servers[0].get("name")
-
-             if not mcp_server_name:
-                 raise ValueError("Assessor MCP Server not found in Agent Registry")
-
-             mcp_toolset = registry.get_mcp_toolset(mcp_server_name)
-
-             # Lookup ContractorAgent
-             agents_list = registry.list_agents(filter_str="displayName:'ContractorAgent'").get("agents", [])
-             contractor_agent = None
-             if agents_list:
-                contractor_agent = registry.get_remote_a2a_agent(agents_list[0].get("name"))
-
-             if not contractor_agent:
-                 raise ValueError("ContractorAgent not found in Agent Registry")
-
              agent = LlmAgent(
                  name="plan_analyzer",
                  model=self.model_name,
                  instruction=prompt,
-                 tools=[load_memory, mcp_toolset],
-                 sub_agents=[contractor_agent],
+                 tools=[load_memory, self.registry.get_mcp_toolset(self.mcp_server_name)],
+                 # sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
+                 sub_agents=[self.get_remote_a2a_agent()],
                  output_schema=PlanAnalysisResponse,
                  after_agent_callback=auto_save_session_to_memory_callback
              )
@@ -289,25 +303,12 @@ class AIService:
             if context:
                 system_instruction += f"\nContext regarding the violation:\n{context}\n"
 
-            # Setup A2A contractor agent call
-            # Setup A2A contractor agent call from Registry
-            registry = AgentRegistry(project_id=self.project_id, location=self.location)
-            agents_list = registry.list_agents()
-            contractor_agent = None
-            for a in agents_list.get("agents", []):
-                if a.get("displayName") == "ContractorAgent":
-                    logger.info(f"Found ContractorAgent: {a['name']}")
-                    contractor_agent = registry.get_remote_a2a_agent(a["name"])
-                    break
-
-            if not contractor_agent:
-                raise ValueError("ContractorAgent not found in Agent Registry")
-
             agent = LlmAgent(
                 name="chat_analyzer",
                 model=self.model_name,
                 instruction=system_instruction,
-                sub_agents=[contractor_agent]
+                #sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)]
+                sub_agents=[self.get_remote_a2a_agent()],
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
@@ -361,6 +362,28 @@ class AIService:
         except Exception as e:
              logger.error(f"Error during Gemini chat: {e}")
              return f"Error communicating with agent: {str(e)}"
+    
+    def get_remote_a2a_agent(self) -> RemoteA2aAgent:
+        # Setup A2A contractor agent call
+        contractor_agent_url = os.getenv("CONTRACTOR_AGENT_URL", "http://0.0.0.0:8081/a2a/building_permit_contractor_agent/.well-known/agent-card.json")
+
+        client_factory = ClientFactory(
+            ClientConfig(
+                # Specify supported transport mechanisms
+                supported_transports=[TransportProtocol.http_json, TransportProtocol.jsonrpc],
+                # Use client preferences for protocol negotiation
+                use_client_preference=True,
+            )
+        )
+        return RemoteA2aAgent(
+                name="building_permit_contractor_agent",
+                description=(
+                    "An agent that helps find licensed contractors for specific jobs in a given area. "
+                    "Use this agent when the user asks for help finding a contractor."
+                ),
+                agent_card=f"{contractor_agent_url}",
+                a2a_client_factory=client_factory,
+            )
 
     def _get_mock_response(self) -> Dict[str, Any]:
          return {

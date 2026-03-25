@@ -23,13 +23,13 @@ import google.auth
 
 _, project_id = google.auth.default()
 os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
-os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
 model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 
 root_agent = Agent(
-    name="ContractorAgent",
+    name="building_permit_contractor_agent",
     model=Gemini(
         model=model_name,
         retry_options=types.HttpRetryOptions(attempts=3),
@@ -46,5 +46,5 @@ root_agent = Agent(
 
 app = App(
     root_agent=root_agent,
-    name="contractor_agent",
+    name="building_permit_contractor_agent",
 )
