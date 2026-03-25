@@ -192,8 +192,8 @@ class AIService:
                  model=self.model_name,
                  instruction=prompt,
                  tools=[load_memory, self.registry.get_mcp_toolset(self.mcp_server_name)],
-                 # sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
-                 sub_agents=[self.get_remote_a2a_agent()],
+                 sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
+                 # sub_agents=[self.get_remote_a2a_agent()],
                  output_schema=PlanAnalysisResponse,
                  after_agent_callback=auto_save_session_to_memory_callback
              )
@@ -307,8 +307,8 @@ class AIService:
                 name="chat_analyzer",
                 model=self.model_name,
                 instruction=system_instruction,
-                #sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)]
-                sub_agents=[self.get_remote_a2a_agent()],
+                sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)]
+                # sub_agents=[self.get_remote_a2a_agent()],
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split('/')[-1] if self.reasoning_engine_app_name else "default-engine"
