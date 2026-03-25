@@ -2,6 +2,22 @@ module github.com/spc/building-plan-api
 
 go 1.25.8
 
+require internal/telemetry v1.0.0
+
+replace internal/telemetry => ./internal/telemetry
+
+require internal/handlers v1.0.0
+
+replace internal/handlers => ./internal/handlers
+
+require internal/models v1.0.0
+
+replace internal/models => ./internal/models
+
+require internal/database v1.0.0
+
+replace internal/database => ./internal/database
+
 require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.55.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.31.0

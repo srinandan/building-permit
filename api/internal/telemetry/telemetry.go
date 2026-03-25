@@ -16,6 +16,7 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -37,6 +38,19 @@ import (
 // InitTelemetry initializes OpenTelemetry for Tracing and Metrics using Google Cloud exporters.
 // It returns a shutdown function that should be called on service exit.
 func InitTelemetry(ctx context.Context, projectID, serviceName string) (func(context.Context) error, error) {
+	var shutdownFuncs []func(context.Context) error
+
+	// shutdown combines shutdown functions from multiple OpenTelemetry
+	// components into a single function.
+	shutdown := func(ctx context.Context) error {
+		var err error
+		for _, fn := range shutdownFuncs {
+			err = errors.Join(err, fn(ctx))
+		}
+		shutdownFuncs = nil
+		return err
+	}
+
 	// Define resource attributes
 	res, err := resource.New(ctx,
 		resource.WithDetectors(gcp.NewDetector()),
@@ -60,6 +74,7 @@ func InitTelemetry(ctx context.Context, projectID, serviceName string) (func(con
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	)
+	shutdownFuncs = append(shutdownFuncs, tp.Shutdown)
 	otel.SetTracerProvider(tp)
 
 	// 2. Metric Exporter
@@ -72,6 +87,7 @@ func InitTelemetry(ctx context.Context, projectID, serviceName string) (func(con
 		metric.WithReader(metric.NewPeriodicReader(metricExporter)),
 		metric.WithResource(res),
 	)
+	shutdownFuncs = append(shutdownFuncs, mp.Shutdown)
 	otel.SetMeterProvider(mp)
 
 	// Start runtime metrics collection
@@ -88,19 +104,7 @@ func InitTelemetry(ctx context.Context, projectID, serviceName string) (func(con
 	// 4. Logger Setup (slog with Trace Context)
 	initSlog(projectID)
 
-	return func(ctx context.Context) error {
-		var errs []error
-		if err := tp.Shutdown(ctx); err != nil {
-			errs = append(errs, fmt.Errorf("failed to shutdown tracer provider: %w", err))
-		}
-		if err := mp.Shutdown(ctx); err != nil {
-			errs = append(errs, fmt.Errorf("failed to shutdown meter provider: %w", err))
-		}
-		if len(errs) > 0 {
-			return fmt.Errorf("shutdown errors: %v", errs)
-		}
-		return nil
-	}, nil
+	return shutdown, nil
 }
 
 // initSlog configures the default slog logger to output JSON to stdout

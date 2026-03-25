@@ -13,6 +13,11 @@
 # limitations under the License.
 
 FROM python:3.12-slim
+LABEL org.opencontainers.image.url='https://github.com/srinandan/building-permit/assessor-mcp-server' \
+    org.opencontainers.image.documentation='https://github.com/srinandan/building-permit/assessor-mcp-server' \
+    org.opencontainers.image.source='https://github.com/srinandan/building-permit/assessor-mcp-server' \
+    org.opencontainers.image.vendor='Google LLC' \
+    org.opencontainers.image.licenses='Apache-2.0'
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv

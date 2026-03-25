@@ -16,6 +16,7 @@
 FROM golang:1.25-alpine AS build
 WORKDIR /app
 COPY go.mod go.sum ./
+COPY internal/ ./internal/
 RUN go mod download
 COPY . .
 # CGO_ENABLED=1 is required for go-sqlite3
