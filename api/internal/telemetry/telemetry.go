@@ -25,7 +25,7 @@ import (
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
@@ -80,10 +80,7 @@ func InitTelemetry(ctx context.Context, projectID, location, serviceName string)
 	otel.SetTracerProvider(tp)
 
 	// 3. Propagator
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	))
+	otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
 
 	// 4. Logger Setup (slog with Trace Context)
 	initSlog(projectID)
