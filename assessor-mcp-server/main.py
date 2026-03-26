@@ -73,6 +73,9 @@ McpInstrumentor().instrument()
 
 class TraceMiddleware(Middleware):
     async def on_call_tool(self, context: MiddlewareContext, call_next):
+
+        # print context method message.name and type
+        print(f"Context method: {context.method} Context message.name: {context.message.name} Context message.type: {context.message.type}")
         tool_name = context.message.name
 
         # The tracer name can be any string. Using the module name is a common practice.
@@ -101,6 +104,7 @@ mcp_server = FastMCP(
 )
 def lookup_parcel(apn: str) -> dict:
     """Lookup property details by Assessor's Parcel Number (APN)."""
+    print(f"lookup_parcel called with apn: {apn}")
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM parcels WHERE apn = ?", (apn,))
@@ -118,6 +122,7 @@ def lookup_parcel(apn: str) -> dict:
 )
 def get_zoning_classification(address: str) -> str:
     """Get the zoning classification code for a given address."""
+    print(f"get_zoning_classification called with address: {address}")
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT zoning_code FROM zoning_by_address WHERE address LIKE ?", (f"%{address}%",))
@@ -135,6 +140,7 @@ def get_zoning_classification(address: str) -> str:
 )
 def get_setback_requirements(zoning_code: str) -> dict:
     """Get setback requirements, lot coverage limits, and height limits for a given zoning code."""
+    print(f"get_setback_requirements called with zoning_code: {zoning_code}")
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM zoning_rules WHERE zoning_code = ?", (zoning_code,))
@@ -154,6 +160,7 @@ def get_setback_requirements(zoning_code: str) -> dict:
 )
 def add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_value: int) -> dict:
     """Add a new property to the assessor's database."""
+    print(f"add_parcel called with apn: {apn}, address: {address}, lot_size_sqft: {lot_size_sqft}, owner: {owner}, assessed_value: {assessed_value}")
     conn = get_connection()
     c = conn.cursor()
     try:
@@ -177,6 +184,7 @@ def add_parcel(apn: str, address: str, lot_size_sqft: int, owner: str, assessed_
 )
 def rezone_address(address: str, new_zoning_code: str) -> dict:
     """Update the zoning classification code for a specific address."""
+    print(f"rezone_address called with address: {address}, new_zoning_code: {new_zoning_code}")
     conn = get_connection()
     c = conn.cursor()
     try:
