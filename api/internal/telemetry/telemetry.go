@@ -50,7 +50,7 @@ func InitTelemetry(ctx context.Context, projectID, location, serviceName string)
 	}
 
 	// Define resource attributes
-	res, err := resource.New(ctx,
+	customRes, err := resource.New(ctx,
 		resource.WithDetectors(gcp.NewDetector()),
 		resource.WithTelemetrySDK(),
 		resource.WithAttributes(
@@ -63,7 +63,12 @@ func InitTelemetry(ctx context.Context, projectID, location, serviceName string)
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
+		return nil, fmt.Errorf("failed to create custom resource: %w", err)
+	}
+
+	res, err := resource.Merge(resource.Default(), customRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge resources: %w", err)
 	}
 
 	traceExporter, err := texporter.New(texporter.WithProjectID(projectID))
