@@ -36,12 +36,23 @@ from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from a2a.client import ClientConfig, ClientFactory
 from a2a.types import TransportProtocol
 
-
+from opentelemetry.propagate import inject
 from google.adk.integrations.agent_registry import AgentRegistry
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def otel_header_provider(context) -> dict[str, str]:
+    """
+    Dynamically injects OpenTelemetry trace headers into a dictionary.
+    The 'context' argument here is an ADK ReadonlyContext.
+    """
+    headers = {}
+    # inject() reads the current active OpenTelemetry context
+    # and populates the dictionary with trace headers (e.g., traceparent)
+    inject(headers)
+    return headers
 
 class Violation(BaseModel):
     section: str
@@ -85,7 +96,7 @@ class AIService:
             self.docai_processor_name = self.docai_client.processor_path(self.project_id, self.docai_location, self.docai_processor_id)
         
         # Find Registry Assets
-        self.registry = AgentRegistry(project_id=self.project_id, location=self.location)
+        self.registry = AgentRegistry(project_id=self.project_id, location=self.location, header_provider=otel_header_provider)
         servers = self.registry.list_mcp_servers()
         mcp_server_name = None
         for s in servers.get("mcpServers", []):

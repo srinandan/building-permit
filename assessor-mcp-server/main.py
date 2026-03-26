@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import uvicorn
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from db import get_connection, init_db
 
@@ -30,51 +30,42 @@ from google import auth
 from google.auth.transport.grpc import AuthMetadataPlugin
 import google.auth.transport.requests
 import grpc
+from fastmcp.server.middleware import Middleware, MiddlewareContext
 from opentelemetry.instrumentation.mcp import McpInstrumentor
+from telemetry import setup_telemetry
 
-# --- OpenTelemetry Setup ---
+OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "building-permit-assessor-mcp-server")
+
+# Setup telemetry
+setup_telemetry()
+
+# Instrument MCP Server
 McpInstrumentor().instrument()
 
-try:
-    credentials, project_id = auth.default()
-except Exception:
-    credentials, project_id = None, None
+class TraceMiddleware(Middleware):
+    async def on_call_tool(self, context: MiddlewareContext, call_next):
+        tool_name = context.message.name
 
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", project_id or "")
+        # The tracer name can be any string. Using the module name is a common practice.
+        tracer = trace.get_tracer(__name__)
+        span_name = tool_name
 
-if PROJECT_ID:
-    os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"gcp.project_id={PROJECT_ID}"
+        with tracer.start_as_current_span(span_name) as span:
+            # Add attributes to the span for more context in Cloud Trace.
+            span.set_attribute("context.method", str(context.method))
+            span.set_attribute("context.name", str(context.message.name))
+            span.set_attribute("context.type", str(context.type))
+            span.set_attribute("service.name", OTEL_SERVICE_NAME)
+            # Allow other tools to proceed
+            return await call_next(context)
 
-os.environ.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "https://telemetry.googleapis.com")
-
-resource = Resource.create(
-    attributes={
-        SERVICE_NAME: "building-permit-assessor-mcp-server",
-    }
-)
-
-try:
-    if credentials:
-        # Request used to refresh credentials upon expiry
-        request = auth.transport.requests.Request()
-        auth_metadata_plugin = AuthMetadataPlugin(credentials=credentials, request=request)
-        channel_creds = grpc.composite_channel_credentials(
-            grpc.ssl_channel_credentials(),
-            grpc.metadata_call_credentials(auth_metadata_plugin),
-        )
-        otlp_grpc_exporter = OTLPSpanExporter(credentials=channel_creds)
-    else:
-        otlp_grpc_exporter = OTLPSpanExporter()
-
-    tracer_provider = TracerProvider(resource=resource)
-    processor = BatchSpanProcessor(otlp_grpc_exporter)
-    tracer_provider.add_span_processor(processor)
-    trace.set_tracer_provider(tracer_provider)
-except Exception as e:
-    print(f"Failed to initialize OpenTelemetry: {e}")
 
 # Initialize FastMCP Server
-mcp_server = FastMCP(name="building-permit-assessor-mcp-server", host="0.0.0.0")
+mcp_server = FastMCP(
+    name=OTEL_SERVICE_NAME,
+    middleware=[TraceMiddleware()]
+)
+
 
 @mcp_server.tool(
     annotations=ToolAnnotations(
@@ -210,7 +201,7 @@ def add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_
     finally:
         conn.close()
 
-app = mcp_server.streamable_http_app()
+app = mcp_server.http_app()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8002, reload=True)
