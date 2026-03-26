@@ -72,6 +72,7 @@ ROLES=(
   "roles/telemetry.metricsWriter"
   "roles/agentregistry.viewer"
   "roles/logging.logWriter"
+  "roles/serviceusage.serviceUsageConsumer"
 )
 
 for role in "${ROLES[@]}"; do

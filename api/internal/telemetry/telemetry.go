@@ -15,21 +15,23 @@
 package telemetry
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"log/slog"
-	"os"
+    "context"
+    "errors"
+    "fmt"
+    "log/slog"
+    "os"
 
-	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
-	"go.opentelemetry.io/contrib/detectors/gcp"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/contrib/propagators/autoprop"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
-	"go.opentelemetry.io/otel/trace"
-
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/contrib/detectors/gcp"
+    "go.opentelemetry.io/contrib/propagators/autoprop"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+    "go.opentelemetry.io/otel/trace"
+    "golang.org/x/oauth2/google"
+    "golang.org/x/oauth2"
 )
 
 // InitTelemetry initializes OpenTelemetry for Tracing and Metrics using Google Cloud exporters.
@@ -48,40 +50,50 @@ func InitTelemetry(ctx context.Context, projectID, location, serviceName string)
 		return err
 	}
 
-	// Construct the resource with service.name first, then merge with defaults/GCP detector
-	res, err := resource.New(ctx,
-		resource.WithDetectors(gcp.NewDetector()),
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String(serviceName),
-		),
-	)
-	if err != nil && !errors.Is(err, resource.ErrPartialResource) &&
-		!errors.Is(err, resource.ErrSchemaURLConflict) {
-		return nil, fmt.Errorf("failed to create resource: %w", err)
-	} else if err != nil {
-		slog.WarnContext(ctx, "partial resource detected; some attributes may be missing", "error", err)
-	}
+    res, err := resource.New(ctx,
+        resource.WithDetectors(gcp.NewDetector()),
+        resource.WithAttributes(
+            semconv.ServiceNameKey.String(serviceName),
+						attribute.String("gcp.project_id", projectID),
+        ),
+    )
+    if err != nil && !errors.Is(err, resource.ErrPartialResource) &&
+        !errors.Is(err, resource.ErrSchemaURLConflict) {
+        return nil, fmt.Errorf("failed to create resource: %w", err)
+    } else if err != nil {
+        slog.WarnContext(ctx, "partial resource detected; some attributes may be missing", "error", err)
+    }
 
-	traceExporter, err := texporter.New(texporter.WithProjectID(projectID))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCP trace exporter: %w", err)
-	}
+    // Use ADC to get a token source for the OTLP endpoint
+    creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
+    if err != nil {
+        return nil, fmt.Errorf("failed to find default credentials: %w", err)
+    }
 
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(traceExporter),
-		sdktrace.WithResource(res),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	)
-	shutdownFuncs = append(shutdownFuncs, tp.Shutdown)
-	otel.SetTracerProvider(tp)
+    // OTLP HTTP exporter targeting the Telemetry API — required for App Hub
+    // OTEL_EXPORTER_OTLP_ENDPOINT env var (already set in Dockerfile) is picked up automatically
+    traceExporter, err := otlptracehttp.New(ctx,
+        otlptracehttp.WithHTTPClient(oauth2.NewClient(ctx, creds.TokenSource)),
+        otlptracehttp.WithHeaders(map[string]string{
+            "x-goog-user-project": projectID,
+        }),
+    )
+    if err != nil {
+        return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
+    }
 
-	// 3. Propagator
-	otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(traceExporter),
+        sdktrace.WithResource(res),
+        sdktrace.WithSampler(sdktrace.AlwaysSample()),
+    )
+    shutdownFuncs = append(shutdownFuncs, tp.Shutdown)
+    otel.SetTracerProvider(tp)
 
-	// 4. Logger Setup (slog with Trace Context)
-	initSlog(projectID)
+    otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
+    initSlog(projectID)
 
-	return shutdown, nil
+    return shutdown, nil
 }
 
 // initSlog configures the default slog logger to output JSON to stdout
