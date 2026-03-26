@@ -23,14 +23,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
-
-// --- Main API Entrypoint ---
 
 const serviceName = "building-permit-api"
 
@@ -66,14 +63,11 @@ func main() {
 	r.Use(otelgin.Middleware(serviceName))
 
 	// Setup CORS to allow our frontend to make requests
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // in production restrict this to frontend URL
-		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "traceparent", "tracestate"}
+	r.Use(cors.New(config))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
