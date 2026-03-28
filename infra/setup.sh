@@ -42,6 +42,7 @@ APIS=(
   "cloudbuild.googleapis.com"
   "cloudtrace.googleapis.com"
   "agentregistry.googleapis.com"
+  "bigquery.googleapis.com"
 )
 
 for api in "${APIS[@]}"; do
@@ -73,6 +74,7 @@ ROLES=(
   "roles/agentregistry.viewer"
   "roles/logging.logWriter"
   "roles/serviceusage.serviceUsageConsumer"
+  "roles/bigquery.admin"
 )
 
 for role in "${ROLES[@]}"; do

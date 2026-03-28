@@ -75,7 +75,7 @@ class TraceMiddleware(Middleware):
     async def on_call_tool(self, context: MiddlewareContext, call_next):
 
         # print context method message.name and type
-        print(f"Context method: {context.method} Context message.name: {context.message.name} Context message.type: {context.message.type}")
+        print(f"Context method: {context.method} Context message.name: {context.message.name} Context type: {context.type}")
         tool_name = context.message.name
 
         # The tracer name can be any string. Using the module name is a common practice.
@@ -113,7 +113,6 @@ def lookup_parcel(apn: str) -> dict:
     if row:
         return dict(row)
     return {"error": f"Parcel not found for APN: {apn}"}
-
 @mcp_server.tool(
     annotations=ToolAnnotations(
         readOnlyHint=True,

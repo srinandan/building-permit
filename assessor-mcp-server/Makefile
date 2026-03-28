@@ -21,6 +21,12 @@ REGION ?= us-central1
 install:
 	uv sync
 
+test:
+	uv run python test_main.py
+
+test-network:
+	uv run python test_network.py
+
 start:
 	uv run uvicorn main:app --reload --port 8002
 
