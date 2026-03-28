@@ -128,33 +128,26 @@ class AIService:
         
         # Find Registry Assets
         self.registry = AgentRegistry(project_id=self.project_id, location=self.location, header_provider=otel_header_provider)
-        servers = self.registry.list_mcp_servers()
-        mcp_server_name = None
-        for s in servers.get("mcpServers", []):
-            if s.get("displayName") == "assessor-mcp-server":
-                logger.info(f"Found assessor-mcp-server: {s['name']}")
-                mcp_server_name = s["name"]
-                break
+        servers = self.registry.list_mcp_servers(filter_str="displayName:assessor-mcp-server",page_size=1)
+        mcp_server_name = servers.get("mcpServers", [])[0]["name"]
 
         if not mcp_server_name:
             # throw error
             raise ValueError("Assessor MCP Server not found in Agent Registry")
-        
+
+        logger.info(f"Found assessor-mcp-server: {mcp_server_name}")
+
         self.mcp_server_name = mcp_server_name
         self.mcp_toolset = self.registry.get_mcp_toolset(mcp_server_name)
 
         # Lookup ContractorAgent
-        agents_list = self.registry.list_agents()
-        a2a_server_name = None
-        for a in agents_list.get("agents", []):
-            if a.get("displayName") == "building_permit_contractor_agent":
-                logger.info(f"Found building_permit_contractor_agent: {a['name']}")
-                a2a_server_name = a['name']
-                break
+        agents_list = self.registry.list_agents(filter_str="displayName:building_permit_contractor_agent",page_size=1)
+        a2a_server_name = agents_list.get("agents", [])[0]["name"]
 
         if not a2a_server_name:
             raise ValueError("building_permit_contractor_agent not found in Agent Registry")
         
+        logger.info(f"Found building_permit_contractor_agent: {a2a_server_name}")
         self.contractor_agent_name = a2a_server_name
 
     def extract_text_from_pdf(self, pdf_bytes: bytes) -> str:
@@ -305,6 +298,9 @@ class AIService:
              if not final_text:
                   logger.error("No response text received from agent.")
                   return self._get_mock_response()
+
+             # close the mcp toolset
+             self.mcp_toolset.close()
 
              try:
                  # Improved JSON extraction matching the user sample pattern
