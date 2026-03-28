@@ -238,7 +238,7 @@ class AIService:
                  instruction=prompt,
                  # get the assessor mcp server tools from registry
                  tools=[load_memory, self.mcp_toolset],
-                 # if not usng Agent Registry, use this
+                 # if not using Agent Registry, use this
                  # tools=[load_memory, self.get_assessor_mcp_server()],
                  sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
                  # If not using Agent Registry, uncomment this block
