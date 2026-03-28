@@ -181,7 +181,7 @@ export function DocumentCenter() {
             <span onClick={() => navigate(`/permit/${id}`)} className="material-symbols-outlined text-slate-900 dark:text-slate-100 cursor-pointer">arrow_back</span>
             <div className="flex items-center gap-2">
               <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-6 w-6 object-contain rounded-full bg-white shadow-sm" />
-              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-base sm:text-xl">San Paloma County Permit Hub</h1>
+              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-xs sm:text-sm md:text-xl leading-tight">San Paloma County Permit Hub</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">

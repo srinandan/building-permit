@@ -171,7 +171,7 @@ export function Dashboard() {
             </button>
             <div className="flex items-center gap-2">
               <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-8 w-8 object-contain rounded-full bg-white shadow-sm" />
-              <h1 className="text-lg sm:text-xl font-black text-blue-800 dark:text-blue-400 uppercase tracking-tight font-['Inter']">
+              <h1 className="text-sm sm:text-base md:text-xl leading-tight font-black text-blue-800 dark:text-blue-400 tracking-tight font-['Inter']">
                 San Paloma County Permit Hub
               </h1>
             </div>

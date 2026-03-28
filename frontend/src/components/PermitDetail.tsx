@@ -98,7 +98,7 @@ export function PermitDetail() {
             </button>
             <div className="flex items-center gap-2">
               <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-6 w-6 object-contain rounded-full bg-white shadow-sm" />
-              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-base sm:text-lg">San Paloma County Permit Hub</h1>
+              <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-xs sm:text-sm md:text-lg leading-tight">San Paloma County Permit Hub</h1>
             </div>
           </div>
           <div className="flex gap-4">

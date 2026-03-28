@@ -95,7 +95,7 @@ export function NewPermit() {
             <h1 className="font-['Inter'] font-bold tracking-tight text-slate-900 text-lg">New Application</h1>
           </div>
           <div className="flex items-center gap-2">
-            <h1 className="text-sm sm:text-base font-black text-blue-800 uppercase tracking-tight">San Paloma County Permit Hub</h1>
+            <h1 className="text-xs sm:text-sm md:text-base leading-tight text-right font-black text-blue-800 tracking-tight">San Paloma County Permit Hub</h1>
             <img src="/spc_logo.png" alt="San Paloma County Permit Hub Logo" className="h-6 w-6 object-contain rounded-full bg-white shadow-sm" />
           </div>
         </div>
