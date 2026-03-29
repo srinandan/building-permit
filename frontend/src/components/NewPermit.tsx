@@ -301,31 +301,6 @@ export function NewPermit() {
                     ) : null}
                  </div>
               )}
-
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">City</label>
-                  <input
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none"
-                    placeholder="Metropolis"
-                    type="text"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">Zip Code</label>
-                  <input
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none"
-                    placeholder="90210"
-                    type="text"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Group: Description */}
