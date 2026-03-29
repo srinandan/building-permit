@@ -338,21 +338,6 @@ export function NewPermit() {
             </div>
           </form>
         </section>
-
-        {/* Map Snippet (Visual Decoration) */}
-        <section className="mt-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          <div className="h-32 w-full rounded-2xl overflow-hidden relative">
-            <div className="w-full h-full bg-surface-container-highest flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl text-outline">map</span>
-            </div>
-            <div className="absolute inset-0 bg-primary/10 mix-blend-multiply"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-white/90 backdrop-blur p-2 rounded-lg shadow-xl">
-                <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
