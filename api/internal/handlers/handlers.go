@@ -382,6 +382,8 @@ func GetPropertiesByEmailHandler(c *gin.Context) {
 	client := mcp.NewClient(&mcp.Implementation{Name: "mcp-client", Version: "v1.0.0"}, nil)
 	transport := &mcp.StreamableClientTransport{
 		Endpoint: assessorURL,
+		HTTPClient: agentHTTPClient,
+		MaxRetries: 3,
 	}
 
 	cs, err := client.Connect(c.Request.Context(), transport, nil)
@@ -450,13 +452,13 @@ func GetMapDataHandler(c *gin.Context) {
 
 	// Create a new client, with no features.
 	client := mcp.NewClient(&mcp.Implementation{Name: "mcp-client", Version: "v1.0.0"}, nil)
-	
+
 	// Create a custom transport to inject the API key header
 	var customClient *http.Client
 	if apiKey != "" {
 		customClient = &http.Client{
 			Transport: &headerTransport{
-				base:   http.DefaultTransport,
+				base:   agentHTTPClient.Transport,
 				header: http.Header{"x-goog-api-key": []string{apiKey}},
 			},
 		}
