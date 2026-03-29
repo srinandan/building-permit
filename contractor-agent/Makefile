@@ -8,7 +8,7 @@ install:
 	uv sync
 
 start:
-	uv run uvicorn main:app --reload --port 8080
+	uv run uvicorn main:app --reload --port 8081
 
 build:
 	uv sync

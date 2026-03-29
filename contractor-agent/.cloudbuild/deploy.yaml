@@ -80,7 +80,7 @@ steps:
       - "--cpu-boost"
       - "--session-affinity"
       - "--ingress"
-      - "internal-and-cloud-load-balancing"
+      - "all"
       - "--labels=appid=building-permit"
 
 substitutions:

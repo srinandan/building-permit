@@ -69,7 +69,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
+      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},DB_PATH=/app/data/assessor.db'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=8002,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--max-instances"
@@ -80,8 +80,10 @@ steps:
       - "--cpu-boost"
       - "--session-affinity"
       - "--ingress"
-      - "internal-and-cloud-load-balancing"
+      - "all"
       - "--labels=appid=building-permit"
+      - "--add-volume=name=gcs-db,type=cloud-storage,bucket=${PROJECT_ID}-building-permit-assessor-db"
+      - "--add-volume-mount=volume=gcs-db,mount-path=/app/data"      
 
 substitutions:
   _REGION: ${_REGION}

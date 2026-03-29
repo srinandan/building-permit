@@ -31,11 +31,12 @@ RUN uv sync --frozen
 
 # Use the virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
+ENV DB_NAME=/app/data/assessor.db
 ENV OTEL_SERVICE_NAME=building-permit-assessor-mcp-server
 ENV ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false
 ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
 ENV OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT
 
 EXPOSE 8002
-
+VOLUME ["/app/data"]
 CMD ["uv", "run", "main.py", "--host", "0.0.0.0", "--port", "8002"]

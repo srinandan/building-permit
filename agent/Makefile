@@ -22,7 +22,7 @@ start:
 	export VERTEX_RAG_CORPUS_NAME=${VERTEX_RAG_CORPUS_NAME} ;\
 	export REASONING_ENGINE_APP_NAME=${REASONING_ENGINE_APP_NAME} ;\
 	export GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME} ;\
-	uv run uvicorn main:app --reload --port 8080
+	uv run uvicorn main:app --reload --port 8000
 
 build:
 	@echo "Python builds are typically just dependencies, use 'make install'"

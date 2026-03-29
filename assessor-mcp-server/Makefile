@@ -28,7 +28,7 @@ test-network:
 	uv run python test_network.py
 
 start:
-	uv run uvicorn main:app --reload --port 8002
+	uv run main.py --reload --port 8002 --host 0.0.0.0
 
 clean:
 	rm -rf .venv

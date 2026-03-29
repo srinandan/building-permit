@@ -23,6 +23,7 @@ fi
 SERVICE_ACCOUNT_NAME="build-permit-sa"
 SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT_NAME}@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 DB_BUCKET="${GOOGLE_CLOUD_PROJECT}-building-permit-db"
+ASSESSOR_DB_BUCKET="${GOOGLE_CLOUD_PROJECT}-building-permit-assessor-db"
 
 echo "Using Project ID: $GOOGLE_CLOUD_PROJECT"
 echo "Using Location: $GOOGLE_CLOUD_LOCATION"
@@ -43,6 +44,7 @@ APIS=(
   "cloudtrace.googleapis.com"
   "agentregistry.googleapis.com"
   "bigquery.googleapis.com"
+  "secretmanager.googleapis.com"
 )
 
 for api in "${APIS[@]}"; do
@@ -75,6 +77,7 @@ ROLES=(
   "roles/logging.logWriter"
   "roles/serviceusage.serviceUsageConsumer"
   "roles/bigquery.admin"
+  "roles/secretmanager.secretAccessor"
 )
 
 for role in "${ROLES[@]}"; do
@@ -92,7 +95,15 @@ else
   echo "GCS bucket $DB_BUCKET already exists."
 fi
 
-# 5. Create Artifact Registry Repository if it doesn't exist
+# 5. Create GCS Bucket for Assessor Database if it doesn't exist
+if ! gsutil ls -b "gs://${ASSESSOR_DB_BUCKET}" >/dev/null 2>&1; then
+  echo "Creating GCS bucket for assessor database: $ASSESSOR_DB_BUCKET in $GOOGLE_CLOUD_LOCATION..."
+  gsutil mb -l "$GOOGLE_CLOUD_LOCATION" "gs://${ASSESSOR_DB_BUCKET}"
+else
+  echo "GCS bucket $ASSESSOR_DB_BUCKET already exists."
+fi
+
+# 6. Create Artifact Registry Repository if it doesn't exist
 REPOSITORY_NAME="building-permit"
 if ! gcloud artifacts repositories describe "$REPOSITORY_NAME" --location="$GOOGLE_CLOUD_LOCATION" --project="$GOOGLE_CLOUD_PROJECT" >/dev/null 2>&1; then
   echo "Creating Artifact Registry repository: $REPOSITORY_NAME in $GOOGLE_CLOUD_LOCATION..."
@@ -103,6 +114,16 @@ if ! gcloud artifacts repositories describe "$REPOSITORY_NAME" --location="$GOOG
     --description="Docker repository for building-permit images"
 else
   echo "Artifact Registry repository $REPOSITORY_NAME already exists."
+fi
+
+# 7. Create Secret Manager secret for Maps API Key if it doesn't exist
+if ! gcloud secrets describe "maps-api-key" --project "$GOOGLE_CLOUD_PROJECT" >/dev/null 2>&1; then
+  echo "Creating Secret Manager secret: maps-api-key..."
+  gcloud secrets create "maps-api-key" \
+    --replication-policy="automatic" \
+    --project "$GOOGLE_CLOUD_PROJECT"
+else
+  echo "Secret maps-api-key already exists."
 fi
 
 echo "Setup script completed successfully."

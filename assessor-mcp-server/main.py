@@ -1,5 +1,6 @@
 import os
 import grpc
+import sqlite3
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from db import get_connection, init_db
@@ -139,25 +140,6 @@ def get_setback_requirements(zoning_code: str) -> dict:
         return dict(row)
     return {"error": f"Zoning code not found: {zoning_code}"}
 
-
-@mcp_server.tool(
-    annotations=ToolAnnotations(
-        readOnlyHint=True,
-        idempotentHint=True,
-    )
-)
-def get_user_properties(email: str) -> dict:
-    """Get a list of properties associated with a user's email address."""
-    print(f"get_user_properties called with email: {email}")
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT address FROM user_properties WHERE user_email = ?", (email,))
-    rows = c.fetchall()
-    conn.close()
-
-    properties = [row["address"] for row in rows]
-    return {"email": email, "properties": properties}
-
 @mcp_server.tool(
     annotations=ToolAnnotations(
         readOnlyHint=False,
@@ -242,50 +224,34 @@ def add_zoning_rule(zoning_code: str, description: str, max_height_ft: int, max_
     finally:
         conn.close()
 
-from pydantic import BaseModel
-class UserEmailReq(BaseModel):
-    email: str
-
-# Create an underlying FastAPI app to serve both MCP SSE and our custom REST route
-from fastapi import FastAPI
-import uvicorn
-import sqlite3
-
-app = FastAPI()
-
-# Custom REST Endpoint to satisfy the Go backend requirement simply
-@app.post("/mcp-proxy/tools/call")
-def get_user_properties_rest(req: UserEmailReq):
+@mcp_server.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        destructiveHint=False,
+    )
+)
+def get_user_properties(email: str) -> dict:
+    """Get a list of properties associated with a user's email address."""
+    print(f"get_user_properties called with email: {email}")
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute("SELECT address FROM user_properties WHERE user_email = ?", (req.email,))
-    rows = c.fetchall()
-    conn.close()
-    properties = [row["address"] for row in rows]
-    # FastMCP wrapper JSON-RPC format mock so Go can parse it easily if needed, or just return dict
-    return {"properties": properties}
+    try:
+        c.execute("SELECT address FROM user_properties WHERE user_email = ?", (email,))
+        rows = c.fetchall()
+        properties = [row["address"] for row in rows]
+        return {"properties": properties}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
-    # Mount FastMCP SSE transport onto the FastAPI app
-    import starlette.routing
-    from mcp.server.sse import SseServerTransport
-    from starlette.requests import Request
-
-    sse = SseServerTransport("/messages/")
-
-    async def handle_sse(request: Request):
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
-            await mcp_server._mcp_server.run(
-                streams[0], streams[1], mcp_server._mcp_server.create_initialization_options()
-            )
-
-    async def handle_messages(request: Request):
-        await sse.handle_post_message(request.scope, request.receive, request._send)
-
-    app.add_route("/sse", handle_sse, methods=["GET"])
-    app.add_route("/messages/", handle_messages, methods=["POST"])
-
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    asyncio.run(
+        mcp_server.run_async(
+            transport="streamable-http", 
+            host="0.0.0.0", 
+            port=8002,
+        )
+    )
