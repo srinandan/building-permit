@@ -39,17 +39,20 @@ This repository implements an agentic AI system designed to automate the review 
 
 ### Assessor MCP Server (Data Retrieval)
 - **MCP Protocol:** Implements the Model Context Protocol (MCP) to expose property data as structured tools.
-- **Tool Integration:** Provides `lookup_parcel`, `get_zoning_classification`, and `get_setback_requirements` tools via a Streamable HTTP connection.
+- **Tool Integration:** Provides `lookup_parcel`, `get_zoning_classification`, and `get_setback_requirements` tools via standard HTTP (`FastMCP`).
 - **Data Management:** Capabilities to `add_parcel`, `rezone_address`, and `add_zoning_rule` to the county's assessor database.
+
+### External MCP Integrations
+- **Google Maps MCP:** Proxies map search requests via `modelcontextprotocol/go-sdk` from the API Gateway directly to standard Google Maps MCP.
 
 ### Microservices Architecture
 - **Polyglot Development:** Seamless integration between a Go-based API Gateway, a Python-based AI Agent, and a React-based Frontend.
 - **Orchestration:** The Go backend manages business logic, user state (SQLite/GORM), and acts as a secure proxy to the AI analysis engine.
 
 ### Cloud Native Integrations
-- **Google Cloud Platform (GCP):** Deep integration with Vertex AI, Document AI, and Cloud Trace.
-- **Observability:** Built-in distributed tracing using OpenTelemetry (Go & Python) for monitoring analysis latency and debugging AI pipelines.
-- **Scalability:** Containerized workloads (Dockerfiles included) ready for deployment to Cloud Run or GKE.
+- **Google Cloud Platform (GCP):** Deep integration with Vertex AI, Document AI, Cloud Run, and Secret Manager.
+- **Observability:** Built-in distributed tracing using OpenTelemetry (OTLP HTTP Exporter natively implemented in Go & Python) for monitoring analysis latency and debugging AI pipelines.
+- **Scalability & Containerization:** Pre-configured Dockerfiles (annotated with OCI labels) and `service.yaml` specs for quick deployment to Google Cloud Run (supporting bounded auto-scaling) or GKE.
 
 ---
 

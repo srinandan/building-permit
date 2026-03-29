@@ -21,7 +21,7 @@ The project consists of several primary components communicating over standard H
 - **Styling:** TailwindCSS with Lucide-React icons.
 - **State Management:** Zustand.
 - **API Communication:** Axios.
-- **Observability:** OpenTelemetry.
+- **Observability:** OpenTelemetry (Configured via build arguments for tracing).
 - **Key Features:**
     - User Login (email-based).
     - Property management (auto-creates a default property for demo).
@@ -32,13 +32,14 @@ The project consists of several primary components communicating over standard H
 ### B. API Gateway (Go Backend)
 - **Framework:** Gin Gonic.
 - **ORM:** GORM with SQLite (`building_plans.db`).
-- **Observability:** OpenTelemetry (Google Cloud Trace).
+- **Observability:** OpenTelemetry (OTLP HTTP Exporter for sidecar integration and Google Cloud Trace).
 - **Responsibilities:**
     - User authentication and property/permit management.
     - File upload handling and proxying to the Compliance Agent.
     - Persisting analysis results in the database.
     - Proxying chat requests to the Compliance Agent.
     - CORS management for frontend requests.
+    - Using `modelcontextprotocol/go-sdk` for server-to-server MCP communication (e.g., Maps MCP Server and Assessor Server).
 
 ### C. Vertex AI Reasoning Engine (Shared Services)
 - **Deployment Strategy:** `agent-engine/` container.
@@ -54,7 +55,7 @@ The project consists of several primary components communicating over standard H
     - **Vertex AI (Gemini 1.5 Pro/Flash):** For visual and text analysis of building plans.
     - **Document AI:** For high-fidelity text extraction from PDFs.
     - **Vertex AI Search (RAG):** (Planned/Integrated) For querying against local building codes.
-- **Observability:** OpenTelemetry (Google Cloud Trace).
+- **Observability:** OpenTelemetry (OTLP HTTP Exporter for sidecar integration).
 - **Responsibilities:**
     - Processing PDF files.
     - Extracting and analyzing building plan details.
@@ -134,6 +135,8 @@ The system uses SQLite for simplicity in the current implementation.
 | `/api/permits/:id` | DELETE| Delete a permit application | N/A |
 | `/api/analyze-plan` | POST | Upload PDF for AI analysis | `file: (Binary)`, `permit_id: (string)` |
 | `/api/chat` | POST | Proxy chat message to AI agent | `{ "messages": [...], "permit_id": "...", "violation": {...} }` |
+| `/api/map/search` | POST | Search places using Maps MCP Server | `{ "address": "..." }` |
+| `/api/users/:email/properties` | GET | Retrieve user properties from Assessor MCP Server | N/A |
 | `/health` | GET | Health check | N/A |
 
 ### 4.2. Compliance Agent (Python - Port 8000)
@@ -156,7 +159,7 @@ The system uses SQLite for simplicity in the current implementation.
 
 | Endpoint | Method | Description | Payload |
 |---|---|---|---|
-| `/` | GET/POST | Streamable HTTP Endpoint | JSON Payload |
+| `/` | GET/POST | HTTP Endpoint via FastMCP | JSON Payload |
 | `/health` | GET | Health check | N/A |
 
 **AI Response Format:**
@@ -197,13 +200,19 @@ Dockerfiles are provided for each service:
 - `agent/Dockerfile`
 - `api/Dockerfile`
 - `frontend/Dockerfile`
+- Standardized OCI (Open Container Initiative) labels added to all component Dockerfiles for consistent metadata.
 
-A `Makefile` in each directory handles build and run commands.
+A `Makefile` in each directory handles build and run commands, as well as test execution for MCP components.
+
+### Cloud Deployment (Google Cloud Run)
+- Deployed across Google Cloud Run with dynamic auto-scaling (min:1, max:1 instance constraints in development configurations).
+- Unauthenticated access enforced via IAM policies for the public-facing API gateway.
+- Map API secrets dynamically mounted via Google Cloud Secret Manager.
 
 ### F. Assessor MCP Server (Python Service)
 - **Framework:** FastAPI + `mcp.server.fastmcp`.
-- **Observability:** OpenTelemetry.
+- **Observability:** OpenTelemetry (OTLP HTTP Exporter).
 - **Responsibilities:**
-    - Exposing a Model Context Protocol (MCP) server over Streamable HTTP.
+    - Exposing a Model Context Protocol (MCP) server using standard HTTP via `FastMCP`.
     - Providing fake San Paloma County data to the AI agents for context via tools.
     - Implementing `lookup_parcel`, `get_zoning_classification`, and `get_setback_requirements` tools.
