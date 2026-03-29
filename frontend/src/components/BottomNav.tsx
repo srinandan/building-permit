@@ -40,11 +40,14 @@ export function BottomNav() {
         <span className="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Applications</span>
       </div>
 
-      {/* Profile (Placeholder for now) */}
-      <div className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-4 py-1 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-150 cursor-not-allowed opacity-50">
-        <span className="material-symbols-outlined mb-0.5">person</span>
+      {/* Profile */}
+      <Link
+        to="/profile"
+        className={`flex flex-col items-center justify-center rounded-xl px-4 py-1 active:scale-90 duration-150 ${location.pathname === '/profile' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300'}`}
+      >
+        <span className="material-symbols-outlined mb-0.5" style={location.pathname === '/profile' ? { fontVariationSettings: "'FILL' 1" } : {}}>person</span>
         <span className="font-['Inter'] text-[11px] font-semibold uppercase tracking-wider">Profile</span>
-      </div>
+      </Link>
     </nav>
   );
 }

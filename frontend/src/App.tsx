@@ -22,6 +22,7 @@ import { Dashboard } from './components/Dashboard';
 import { PermitDetail } from './components/PermitDetail';
 import { NewPermit } from './components/NewPermit';
 import { DocumentCenter } from './components/DocumentCenter';
+import { Profile } from './components/Profile';
 import './App.css';
 
 // Protected Route wrapper
@@ -61,6 +62,12 @@ function App() {
         <Route path="/permit/:id/documents" element={
           <ProtectedRoute>
             <DocumentCenter />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } />
 

@@ -100,12 +100,16 @@ export function NewPermit() {
             setAvailableAddresses(res.data.properties);
             if (!selectedAddress && res.data.properties.length > 0) {
               handleAddressSelect(res.data.properties[0]);
+            } else if (selectedAddress && !mapCenter && !mapError) {
+              // If selectedAddress is already set (e.g. from currentProperty)
+              // make sure we load the map data for it on mount
+              handleAddressSelect(selectedAddress);
             }
           }
         })
         .catch(err => console.error("Failed to load properties:", err));
     }
-  }, [user, handleAddressSelect, selectedAddress]);
+  }, [user, handleAddressSelect, selectedAddress, mapCenter, mapError]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -297,31 +301,6 @@ export function NewPermit() {
                     ) : null}
                  </div>
               )}
-
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">City</label>
-                  <input
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none"
-                    placeholder="Metropolis"
-                    type="text"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">Zip Code</label>
-                  <input
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none"
-                    placeholder="90210"
-                    type="text"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Group: Description */}
@@ -358,21 +337,6 @@ export function NewPermit() {
               <p className="text-center mt-4 text-xs text-on-surface-variant font-medium">Your progress is automatically saved as a draft.</p>
             </div>
           </form>
-        </section>
-
-        {/* Map Snippet (Visual Decoration) */}
-        <section className="mt-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          <div className="h-32 w-full rounded-2xl overflow-hidden relative">
-            <div className="w-full h-full bg-surface-container-highest flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl text-outline">map</span>
-            </div>
-            <div className="absolute inset-0 bg-primary/10 mix-blend-multiply"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-white/90 backdrop-blur p-2 rounded-lg shadow-xl">
-                <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-              </div>
-            </div>
-          </div>
         </section>
       </main>
     </div>
