@@ -16,7 +16,7 @@ import os
 import json
 import logging
 import re
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 from google.cloud import documentai
 from pydantic import BaseModel, Field
