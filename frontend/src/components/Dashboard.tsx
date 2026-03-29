@@ -84,16 +84,41 @@ export function Dashboard() {
         }
         props = uniqueProps;
 
-
         if (!currentProperty && props.length > 0) {
             setCurrentProperty(props[0]);
         }
 
         if (props.length > 0) {
-            const propId = currentProperty ? currentProperty.id : props[0].id;
-            const permitResponse = await axios.get(`${API_URL}/api/properties/${propId}/permits`);
-            if (isMounted) {
-                setPermits(permitResponse.data);
+            try {
+                const permitPromises = props.map(async (prop) => {
+                    const permitResponse = await axios.get(`${API_URL}/api/properties/${prop.id}/permits`);
+                    const permitsData = Array.isArray(permitResponse.data) ? permitResponse.data : [];
+                    return permitsData.map(p => ({
+                        ...p,
+                        propertyAddress: prop.address,
+                        propertyCity: prop.city
+                    }));
+                });
+
+                const results = await Promise.allSettled(permitPromises);
+
+                let allPermits: any[] = [];
+                results.forEach(result => {
+                    if (result.status === 'fulfilled') {
+                        allPermits = [...allPermits, ...result.value];
+                    } else {
+                        console.error("Failed fetching some permits", result.reason);
+                    }
+                });
+
+                // Sort by created_at descending (newest first)
+                allPermits.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                if (isMounted) {
+                    setPermits(allPermits);
+                }
+            } catch (err) {
+                console.error("Error aggregating permits", err);
             }
         }
 
@@ -269,7 +294,7 @@ export function Dashboard() {
                               <div className="flex items-center gap-2 text-on-surface-variant mb-4">
                                 <span className="material-symbols-outlined text-sm">location_on</span>
                                 <span className="text-sm font-medium line-clamp-1">
-                                    {currentProperty?.address ? `${currentProperty.address}, ${currentProperty.city}` : 'No Address Set'}
+                                    {permit.propertyAddress ? `${permit.propertyAddress}, ${permit.propertyCity}` : 'No Address Set'}
                                 </span>
                               </div>
 
