@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store';
 import { useNavigate } from 'react-router-dom';
@@ -49,22 +49,7 @@ export function NewPermit() {
     description: ''
   });
 
-  useEffect(() => {
-    if (user?.email) {
-      axios.get(`${API_URL}/api/users/email/${user.email}/properties`)
-        .then(res => {
-          if (res.data && res.data.properties) {
-            setAvailableAddresses(res.data.properties);
-            if (!selectedAddress && res.data.properties.length > 0) {
-              handleAddressSelect(res.data.properties[0]);
-            }
-          }
-        })
-        .catch(err => console.error("Failed to load properties:", err));
-    }
-  }, [user]);
-
-  const handleAddressSelect = async (address: string) => {
+  const handleAddressSelect = useCallback(async (address: string) => {
     setSelectedAddress(address);
     setFormData(prev => ({ ...prev, streetAddress: address }));
     setMapError(null);
@@ -105,7 +90,22 @@ export function NewPermit() {
       console.error("Failed to fetch map data:", err);
       setMapError("API_ERROR");
     }
-  };
+  }, [user, setCurrentProperty]);
+
+  useEffect(() => {
+    if (user?.email) {
+      axios.get(`${API_URL}/api/users/email/${user.email}/properties`)
+        .then(res => {
+          if (res.data && res.data.properties) {
+            setAvailableAddresses(res.data.properties);
+            if (!selectedAddress && res.data.properties.length > 0) {
+              handleAddressSelect(res.data.properties[0]);
+            }
+          }
+        })
+        .catch(err => console.error("Failed to load properties:", err));
+    }
+  }, [user, handleAddressSelect, selectedAddress]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
