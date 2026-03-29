@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 from main import app
 
@@ -49,3 +50,58 @@ def test_analyze_plan_mock_pdf():
     assert data["status"] == "Changes Suggested"
     assert len(data["violations"]) > 0
     assert data["violations"][0]["section"].startswith("Mock CA Title 24")
+
+@patch("main.ai_service.chat_about_violation", new_callable=AsyncMock)
+def test_chat_success(mock_chat):
+    mock_chat.return_value = "This is a successful chat response."
+
+    payload = {
+        "messages": [
+            {"role": "user", "content": "Hello, how can I fix the lighting violation?"}
+        ]
+    }
+
+    response = client.post("/chat", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "choices" in data
+    assert len(data["choices"]) == 1
+    assert data["choices"][0]["message"]["content"] == "This is a successful chat response."
+    assert data["choices"][0]["message"]["role"] == "assistant"
+
+@patch("main.ai_service.chat_about_violation", new_callable=AsyncMock)
+def test_chat_with_violation(mock_chat):
+    mock_chat.return_value = "You can fix it by using LED fixtures."
+
+    payload = {
+        "messages": [
+            {"role": "user", "content": "How do I fix this?"}
+        ],
+        "violation": {
+            "section": "CA Title 24",
+            "description": "Lighting issue",
+            "suggestion": "Use LEDs"
+        }
+    }
+
+    response = client.post("/chat", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["choices"][0]["message"]["content"] == "You can fix it by using LED fixtures."
+
+@patch("main.ai_service.chat_about_violation", new_callable=AsyncMock)
+def test_chat_error(mock_chat):
+    mock_chat.side_effect = Exception("Simulated service error")
+
+    payload = {
+        "messages": [
+            {"role": "user", "content": "Trigger an error"}
+        ]
+    }
+
+    response = client.post("/chat", json=payload)
+
+    assert response.status_code == 500
+    assert "Simulated service error" in response.json()["detail"]
