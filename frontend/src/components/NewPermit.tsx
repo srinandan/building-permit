@@ -160,17 +160,6 @@ export function NewPermit() {
 
   if (!user) return null;
 
-  if (isFetchingAddresses) {
-    return (
-      <div className="bg-surface-bright text-on-surface font-body min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-on-surface-variant font-medium">Loading available properties...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-surface-bright text-on-surface font-body min-h-screen flex flex-col pb-20">
       {/* Top Navigation */}
@@ -270,19 +259,31 @@ export function NewPermit() {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2 ml-1">Select Property</label>
-                <select
-                  name="streetAddress"
-                  value={selectedAddress}
-                  onChange={(e) => handleAddressSelect(e.target.value)}
-                  className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none cursor-pointer"
-                  required
-                >
-                  <option value="" disabled>Select an address associated with your account...</option>
-                  {availableAddresses.map((addr) => (
-                    <option key={addr} value={addr}>{addr}</option>
-                  ))}
-                </select>
-                {availableAddresses.length === 0 && (
+                <div className="relative flex items-center">
+                  <select
+                    name="streetAddress"
+                    value={selectedAddress}
+                    onChange={(e) => handleAddressSelect(e.target.value)}
+                    className="w-full bg-surface-container-lowest border-none rounded-xl py-4 px-4 text-on-surface focus:ring-2 focus:ring-primary shadow-sm outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    required
+                    disabled={isFetchingAddresses}
+                  >
+                    {isFetchingAddresses ? (
+                      <option value="" disabled>Loading available addresses...</option>
+                    ) : (
+                      <option value="" disabled>Select an address associated with your account...</option>
+                    )}
+                    {availableAddresses.map((addr) => (
+                      <option key={addr} value={addr}>{addr}</option>
+                    ))}
+                  </select>
+                  {isFetchingAddresses && (
+                    <div className="absolute right-4 pointer-events-none">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+                {!isFetchingAddresses && availableAddresses.length === 0 && (
                    <p className="text-xs text-error mt-2 ml-1">No properties found for your account.</p>
                 )}
               </div>

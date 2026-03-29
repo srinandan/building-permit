@@ -90,7 +90,7 @@ export function Dashboard() {
 
         if (props.length > 0) {
             try {
-                const permitPromises = props.map(async (prop) => {
+                const permitPromises = props.map(async (prop: any) => {
                     const permitResponse = await axios.get(`${API_URL}/api/properties/${prop.id}/permits`);
                     const permitsData = Array.isArray(permitResponse.data) ? permitResponse.data : [];
                     return permitsData.map(p => ({
