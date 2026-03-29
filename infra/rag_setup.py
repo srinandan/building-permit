@@ -20,7 +20,7 @@ import vertexai
 
 # Configuration
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") or os.popen("gcloud config get-value project").read().strip()
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION") or "us-west1"
+LOCATION = "us-west1"
 CORPUS_DISPLAY_NAME = "ca-building-codes"
 BUILDING_CODES_DIR = "../building-codes"
 
@@ -30,7 +30,7 @@ def setup_rag():
 
     # 1. Create Corpus if it doesn't exist
     print(f"Checking for existing corpus: {CORPUS_DISPLAY_NAME}...")
-    existing_corpora = rag.list_rag_corpora()
+    existing_corpora = rag.list_corpora()
     corpus = None
     for c in existing_corpora:
         if c.display_name == CORPUS_DISPLAY_NAME:
@@ -40,7 +40,7 @@ def setup_rag():
 
     if not corpus:
         print(f"Creating RAG Corpus: {CORPUS_DISPLAY_NAME}...")
-        corpus = rag.create_rag_corpus(
+        corpus = rag.create_corpus(
             display_name=CORPUS_DISPLAY_NAME,
             # Initializing with default embedding model
         )
@@ -54,15 +54,36 @@ def setup_rag():
         file_path = os.path.join(BUILDING_CODES_DIR, filename)
         print(f"Uploading {filename}...")
         try:
-            rag.import_files(
+            rag.upload_file(
                 corpus_name=corpus.name,
-                paths=[file_path],
-                chunk_size=1024,
-                chunk_overlap=200,
+                path=file_path,
+                display_name=filename,
             )
             print(f"Successfully started import for {filename}")
         except Exception as e:
             print(f"Failed to upload {filename}: {e}")
+
+    # Update config files with the new corpus ID
+    corpus_id = corpus.name.split('/')[-1]
+    makefile_path = "../agent/Makefile"
+    deploy_yaml_path = "../agent/.cloudbuild/deploy.yaml"
+    import re
+    
+    if os.path.exists(makefile_path):
+        with open(makefile_path, "r") as f:
+            content = f.read()
+        content = re.sub(r"ragCorpora/\d+", f"ragCorpora/{corpus_id}", content)
+        with open(makefile_path, "w") as f:
+            f.write(content)
+        print("Updated agent/Makefile with RAG corpus ID.")
+
+    if os.path.exists(deploy_yaml_path):
+        with open(deploy_yaml_path, "r") as f:
+            content = f.read()
+        content = re.sub(r"ragCorpora/\d+", f"ragCorpora/{corpus_id}", content)
+        with open(deploy_yaml_path, "w") as f:
+            f.write(content)
+        print("Updated agent/.cloudbuild/deploy.yaml with RAG corpus ID.")
 
     print("RAG setup script completed.")
 

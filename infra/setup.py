@@ -1,7 +1,8 @@
 import os
 import subprocess
 import sys
-
+import json
+import urllib.request
 def run_command(command, ignore_errors=False):
     """Run a shell command and print its output."""
     print(f"Running: {command}")
@@ -137,6 +138,72 @@ def setup_infrastructure():
         run_command(f"bq mk --location={location} -d {project_id}:{bq_dataset}")
     else:
         print(f"BigQuery dataset {bq_dataset} already exists.")
+
+    # 8. Create Document AI Processor
+    print("\n--- Creating Document AI Processor ---")
+    docai_location = "us" # Document AI usually uses 'us' or 'eu' region
+    docai_display_name = "ca-building-codes"
+    
+    token = run_command("gcloud auth application-default print-access-token", ignore_errors=True)
+    docai_processor_id = None
+    if token:
+        docai_url = f"https://{docai_location}-documentai.googleapis.com/v1/projects/{project_id}/locations/{docai_location}/processors"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        
+        # Check if exists
+        req_list = urllib.request.Request(docai_url, headers=headers, method="GET")
+        processor_exists = False
+        try:
+            with urllib.request.urlopen(req_list) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                for proc in result.get("processors", []):
+                    if proc.get("displayName") == docai_display_name:
+                        processor_exists = True
+                        docai_processor_id = proc.get("name").split("/")[-1]
+                        print(f"Document AI Processor '{docai_display_name}' already exists: {proc.get('name')}")
+                        break
+        except Exception as e:
+            print(f"Warning: Failed to list Document AI processors: {e}")
+            
+        if not processor_exists:
+            print(f"Creating Document AI processor: {docai_display_name}...")
+            data = {"displayName": docai_display_name, "type": "OCR_PROCESSOR"}
+            req_create = urllib.request.Request(docai_url, data=json.dumps(data).encode("utf-8"), headers=headers, method="POST")
+            try:
+                with urllib.request.urlopen(req_create) as response:
+                    result = json.loads(response.read().decode("utf-8"))
+                    docai_processor_id = result.get("name").split("/")[-1]
+                    print(f"Successfully created processor '{result.get('displayName')}' with name: {result.get('name')}")
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode("utf-8")
+                print(f"Failed to create processor. HTTP Error {e.code}: {e.reason}")
+                print(f"Details: {error_body}")
+            except Exception as e:
+                print(f"Failed to create processor: {e}")
+                
+        # Update config files
+        if docai_processor_id:
+            import re
+            makefile_path = "../agent/Makefile"
+            deploy_yaml_path = "../agent/.cloudbuild/deploy.yaml"
+
+            if os.path.exists(makefile_path):
+                with open(makefile_path, "r") as f:
+                    content = f.read()
+                content = re.sub(r"DOCUMENT_AI_PROCESSOR_ID=[a-zA-Z0-9]+", f"DOCUMENT_AI_PROCESSOR_ID={docai_processor_id}", content)
+                with open(makefile_path, "w") as f:
+                    f.write(content)
+                print(f"Updated agent/Makefile with Document AI processor ID: {docai_processor_id}")
+
+            if os.path.exists(deploy_yaml_path):
+                with open(deploy_yaml_path, "r") as f:
+                    content = f.read()
+                content = re.sub(r"_DOCUMENT_AI_PROCESSOR_ID: [a-zA-Z0-9]+", f"_DOCUMENT_AI_PROCESSOR_ID: {docai_processor_id}", content)
+                with open(deploy_yaml_path, "w") as f:
+                    f.write(content)
+                print(f"Updated agent/.cloudbuild/deploy.yaml with Document AI processor ID: {docai_processor_id}")
+    else:
+        print("Warning: Could not fetch auth token. Skipping Document AI processor creation.")
 
     print("\nInfrastructure setup script completed successfully.")
 
