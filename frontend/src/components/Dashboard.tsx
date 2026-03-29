@@ -24,7 +24,7 @@ import { Loader2 } from 'lucide-react';
 const API_URL = '';
 
 export function Dashboard() {
-  const { user, currentProperty, setCurrentProperty } = useAuthStore();
+  const { user, currentProperty, setCurrentProperty, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const [permits, setPermits] = useState<any[]>([]);
@@ -204,6 +204,17 @@ export function Dashboard() {
           <div className="flex items-center gap-2">
             <button className="text-slate-500 dark:text-slate-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-full active:scale-95 duration-200">
               <span className="material-symbols-outlined">notifications</span>
+            </button>
+            <button
+                onClick={() => {
+                    logout();
+                    navigate('/login');
+                }}
+                className="text-slate-500 dark:text-slate-400 p-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors rounded-full active:scale-95 duration-200"
+                aria-label="Sign Out"
+                title="Sign Out"
+            >
+              <span className="material-symbols-outlined">logout</span>
             </button>
           </div>
         </div>

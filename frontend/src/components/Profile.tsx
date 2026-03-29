@@ -154,8 +154,10 @@ export function Profile() {
                     logout();
                     navigate('/login');
                 }}
-                className="text-sm font-bold text-red-600 dark:text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-xl active:scale-95 duration-200"
+                className="flex items-center gap-1.5 text-sm font-bold text-red-600 dark:text-red-400 py-1.5 px-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-xl active:scale-95 duration-200"
+                aria-label="Sign Out"
             >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
               Sign Out
             </button>
           </div>
@@ -164,7 +166,7 @@ export function Profile() {
 
       <main className="pt-20 px-6 max-w-lg mx-auto">
         {/* User Info */}
-        <section className="mb-10 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-surface-container-high flex flex-col gap-2">
+        <section className="mb-10 bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-surface-container-high flex flex-col gap-4">
             <div className="flex items-center gap-4 mb-2">
                 <div className="w-16 h-16 bg-primary-container text-primary rounded-full flex items-center justify-center text-2xl font-bold uppercase">
                     {user.name ? user.name.charAt(0) : user.email.charAt(0)}
@@ -174,6 +176,17 @@ export function Profile() {
                     <p className="text-sm text-on-surface-variant">{user.email}</p>
                 </div>
             </div>
+
+            <button
+                onClick={() => {
+                    logout();
+                    navigate('/login');
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl font-bold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95 transition-all duration-200 border border-red-100 dark:border-red-900/30"
+            >
+                <span className="material-symbols-outlined text-[20px]">logout</span>
+                Sign Out
+            </button>
         </section>
 
         {/* Existing Properties */}
