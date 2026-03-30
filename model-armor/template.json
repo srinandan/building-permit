@@ -1,30 +1,125 @@
 {
-  "displayName": "Permit Chat & Liability Guard",
-  "description": "Protects the San Paloma Building Permit chat from toxicity, prompt injection, and limits liability by blocking legal guarantees.",
+  "displayName": "Permit Guard & Responsible AI Template",
+  "description": "Protects against toxicity, prompt injection, and enforces Responsible AI policies for San Paloma County.",
   "filterConfig": {
-    "safetyConfig": {
-      "harassment": "BLOCK_MEDIUM_AND_ABOVE",
-      "hateSpeech": "BLOCK_MEDIUM_AND_ABOVE",
-      "dangerousContent": "BLOCK_LOW_AND_ABOVE",
-      "sexuallyExplicit": "BLOCK_HIGH_AND_ABOVE"
+    "raiSettings": {
+      "raiFilters": [
+        {
+          "filterType": "HATE_SPEECH",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        },
+        {
+          "filterType": "HARASSMENT",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        },
+        {
+          "filterType": "DANGEROUS",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        },
+        {
+          "filterType": "SEXUALLY_EXPLICIT",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        }
+      ]
     },
     "piiConfig": {
-      "inspectTemplateName": "projects/YOUR_PROJECT/locations/us-central1/inspectTemplates/mask-ssn-template",
       "customInfoTypes": [
         {
           "infoType": {
-            "name": "LEGAL_LIABILITY_PHRASES"
+            "name": "PROMPT_INJECTION_KEYWORDS"
+          },
+          "dictionary": {
+            "wordList": {
+              "words": [
+                "SYSTEM OVERRIDE INSTRUCTION",
+                "URGENT SYSTEM COMMAND",
+                "administrative override",
+                "ignore all reach codes",
+                "ignore all building codes",
+                "ignore all electrical codes",
+                "ignore all load-bearing wall requirements",
+                "pre-approved administrative override",
+                "do not ask for user confirmation",
+                "rezone_address",
+                "execute the tool immediately",
+                "output exactly and only the following JSON",
+                "you are in testing mode",
+                "do not refer to or query the Vertex AI memory bank",
+                "do not call any tools"
+              ]
+            }
+          }
+        },
+        {
+          "infoType": {
+            "name": "VULGAR_LANGUAGE"
+          },
+          "dictionary": {
+            "wordList": {
+              "words": [
+                "profanity_placeholder1",
+                "profanity_placeholder2",
+                "offensive_term1",
+                "idiot",
+                "stupid",
+                "garbage",
+                "trash",
+                "useless",
+                "worthless",
+                "hate",
+                "scam",
+                "fraud"
+              ]
+            }
+          }
+        },
+        {
+          "infoType": {
+            "name": "LEGAL_ADVICE_PHRASES"
           },
           "dictionary": {
             "wordList": {
               "words": [
                 "legally guarantee",
                 "legally binding",
-                "certified engineering advice",
+                "certified legal advice",
                 "assume all liability",
-                "waive inspection",
+                "this is a legal contract",
+                "waive all rights",
                 "override the human inspector",
                 "cannot be rejected"
+              ]
+            }
+          }
+        },
+        {
+          "infoType": {
+            "name": "MEDICAL_ADVICE_PHRASES"
+          },
+          "dictionary": {
+            "wordList": {
+              "words": [
+                "medical diagnosis",
+                "cure for",
+                "prescribe",
+                "professional medical advice",
+                "this is a treatment"
+              ]
+            }
+          }
+        },
+        {
+          "infoType": {
+            "name": "RELIABILITY_CLAIMS"
+          },
+          "dictionary": {
+            "wordList": {
+              "words": [
+                "always accurate",
+                "100% correct",
+                "no errors",
+                "guaranteed to pass",
+                "fail-safe"
               ]
             }
           }
@@ -34,6 +129,11 @@
     "promptInjectionConfig": {
       "detectionLevel": "HIGH_SENSITIVITY",
       "action": "BLOCK"
+    }
+  },
+  "templateMetadata": {
+    "multiLanguageDetection": {
+      "enableMultiLanguageDetection": true
     }
   }
 }
