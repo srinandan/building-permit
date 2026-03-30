@@ -166,6 +166,19 @@ export function DocumentCenter() {
     setActiveViolation(null);
   };
 
+  const handleSubmitApplication = async () => {
+    try {
+      setLoading(true);
+      await axios.patch(`${API_URL}/api/permits/${id}/status`, { status: 'Submitted' });
+      navigate(`/permit/${id}`);
+    } catch (err) {
+      console.error('Failed to submit application', err);
+      setError('Failed to submit application. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!permit && !loading) return <div className="text-center p-8 mt-20">Permit not found.</div>;
 
 
@@ -323,14 +336,30 @@ export function DocumentCenter() {
                 )}
 
                 {/* Sticky Footer Info */}
-                <div className="mt-12 p-6 bg-surface-container-highest/50 rounded-3xl text-center">
-                  <p className="text-[11px] text-on-surface-variant font-medium">Next Step: Payment of Plan Review Fees</p>
-                  <div className="mt-4 flex justify-center gap-1">
-                    <div className="w-8 h-1 bg-primary rounded-full"></div>
-                    <div className="w-8 h-1 bg-primary rounded-full"></div>
-                    <div className="w-8 h-1 bg-primary-fixed rounded-full"></div>
-                    <div className="w-8 h-1 bg-primary-fixed rounded-full"></div>
-                  </div>
+                <div className="mt-12 p-6 bg-surface-container-highest/50 rounded-3xl text-center flex flex-col items-center">
+                  {missingCount === 0 && latestReport && permit?.status !== 'Submitted' ? (
+                     <>
+                        <p className="text-[11px] text-on-surface-variant font-medium mb-4">Analysis complete. Ready for submission.</p>
+                        <button
+                          onClick={handleSubmitApplication}
+                          disabled={loading}
+                          className="bg-primary text-white px-8 py-3 rounded-full text-sm font-bold shadow-md hover:bg-primary/90 transition-colors w-full max-w-xs flex items-center justify-center gap-2"
+                        >
+                          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span className="material-symbols-outlined">send</span>}
+                          Submit Application
+                        </button>
+                     </>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-on-surface-variant font-medium">Next Step: Payment of Plan Review Fees</p>
+                      <div className="mt-4 flex justify-center gap-1">
+                        <div className="w-8 h-1 bg-primary rounded-full"></div>
+                        <div className="w-8 h-1 bg-primary rounded-full"></div>
+                        <div className="w-8 h-1 bg-primary-fixed rounded-full"></div>
+                        <div className="w-8 h-1 bg-primary-fixed rounded-full"></div>
+                      </div>
+                    </>
+                  )}
                 </div>
             </>
         )}

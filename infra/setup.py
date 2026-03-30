@@ -226,21 +226,21 @@ def setup_infrastructure():
     model_armor_location = location
     model_armor_template_id = "permit-guard-template"
     template_path = "model-armor/template.json"
-    
+
     if os.path.exists(template_path):
         with open(template_path, "r") as f:
             template_json = f.read()
-        
+
         # Replace YOUR_PROJECT and location
         template_json = template_json.replace("YOUR_PROJECT", project_id)
         template_json = template_json.replace("us-central1", model_armor_location)
         template_data = json.loads(template_json)
-        
+
         token = run_command("gcloud auth application-default print-access-token", ignore_errors=True)
         if token:
             ma_url = f"https://modelarmor.googleapis.com/v1/projects/{project_id}/locations/{model_armor_location}/templates"
             headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-            
+
             # Check if exists
             req_list = urllib.request.Request(f"{ma_url}/{model_armor_template_id}", headers=headers, method="GET")
             ma_exists = False
@@ -250,7 +250,7 @@ def setup_infrastructure():
                     print(f"Model Armor Template '{model_armor_template_id}' already exists.")
             except Exception as e:
                 pass
-                
+
             if not ma_exists:
                 print(f"Creating Model Armor template: {model_armor_template_id}...")
                 ma_create_url = f"{ma_url}?templateId={model_armor_template_id}"

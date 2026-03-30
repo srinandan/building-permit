@@ -152,11 +152,13 @@ export function PermitDetail() {
 
                       {/* Step 1 */}
                       <div className="flex gap-6 relative">
-                        <div className="z-10 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
-                          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700" }}>check</span>
+                        <div className={`z-10 w-8 h-8 rounded-full flex items-center justify-center ${
+                            permit.status?.toLowerCase() !== 'draft' ? 'bg-primary text-white' : 'bg-primary-fixed text-on-primary-fixed'
+                        }`}>
+                          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700" }}>{permit.status?.toLowerCase() !== 'draft' ? 'check' : 'edit'}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-on-surface">Submitted</span>
+                          <span className="text-sm font-bold text-on-surface">Application Created</span>
                           <span className="text-xs text-tertiary">{formatDateTime(permit.created_at)}</span>
                         </div>
                       </div>
@@ -164,9 +166,9 @@ export function PermitDetail() {
                       {/* Step 2 (In Review or beyond) */}
                       <div className={`flex gap-6 relative ${permit.status?.toLowerCase() === 'draft' ? 'opacity-50' : ''}`}>
                         <div className={`z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                            permit.status?.toLowerCase() !== 'draft' ? 'bg-primary text-white' : 'bg-primary-fixed text-on-primary-fixed'
+                            permit.status?.toLowerCase() !== 'draft' && permit.status?.toLowerCase() !== 'analysis complete' ? 'bg-primary text-white' : 'bg-primary-fixed text-on-primary-fixed'
                         }`}>
-                          {permit.status?.toLowerCase() !== 'draft' && !permit.status?.toLowerCase().includes('review') ? (
+                          {permit.status?.toLowerCase() !== 'draft' && permit.status?.toLowerCase() !== 'analysis complete' && !permit.status?.toLowerCase().includes('review') ? (
                               <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700" }}>check</span>
                           ) : permit.status?.toLowerCase().includes('review') ? (
                               <div className="w-2 h-2 rounded-full bg-white"></div>
@@ -175,11 +177,11 @@ export function PermitDetail() {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className={`text-sm font-bold ${permit.status?.toLowerCase().includes('review') ? 'text-primary' : 'text-on-surface'}`}>Under Review</span>
+                          <span className={`text-sm font-bold ${permit.status?.toLowerCase().includes('review') ? 'text-primary' : 'text-on-surface'}`}>Submitted for Review</span>
                           <span className="text-xs text-tertiary">
-                              {permit.submissions && permit.submissions.length > 0
-                                  ? formatDateTime(permit.submissions[permit.submissions.length - 1].created_at)
-                                  : 'Pending'}
+                              {permit.status?.toLowerCase() !== 'draft' && permit.status?.toLowerCase() !== 'analysis complete'
+                                  ? 'Received'
+                                  : 'Pending user submission'}
                           </span>
                         </div>
                       </div>

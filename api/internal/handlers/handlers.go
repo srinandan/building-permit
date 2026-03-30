@@ -153,6 +153,30 @@ func DeletePermitHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Permit deleted successfully"})
 }
 
+func UpdatePermitStatusHandler(c *gin.Context) {
+	permitId := c.Param("id")
+
+	var req struct {
+		Status string `json:"status" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var permit models.Permit
+	if err := database.DB.First(&permit, permitId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Permit not found"})
+		return
+	}
+
+	permit.Status = req.Status
+	database.DB.Save(&permit)
+
+	c.JSON(http.StatusOK, permit)
+}
+
 // Struct to extract status from Agent JSON response
 type AgentResponse struct {
 	Status           string        `json:"status"`

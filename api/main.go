@@ -86,6 +86,7 @@ func main() {
 		api.POST("/properties/:id/permits", handlers.CreatePropertyPermitHandler)
 		api.GET("/permits/:id", handlers.GetPermitHandler)
 		api.DELETE("/permits/:id", handlers.DeletePermitHandler)
+		api.PATCH("/permits/:id/status", handlers.UpdatePermitStatusHandler)
 		api.POST("/chat", handlers.ChatHandler)
 		api.POST("/contractor-chat", handlers.ContractorChatHandler)
 
