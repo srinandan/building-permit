@@ -45,6 +45,9 @@ from google.adk.plugins.bigquery_agent_analytics_plugin import (
 )
 from google.cloud import bigquery
 
+import pypdf
+import io
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -365,6 +368,23 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                         )
                     )
                 )
+
+            # Extract PDF metadata and append it to the prompt
+            try:
+                reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+                metadata = reader.metadata
+                if metadata:
+                    meta_text = "\n".join([f"{k}: {v}" for k, v in metadata.items() if v])
+                    if meta_text:
+                        user_content_parts.append(
+                            Part(
+                                text=(
+                                    f"PDF Metadata:\n{meta_text}\n"
+                                )
+                            )
+                        )
+            except Exception as e:
+                logger.warning(f"Failed to extract PDF metadata: {e}")
 
             new_message = Content(role="user", parts=user_content_parts)
 
