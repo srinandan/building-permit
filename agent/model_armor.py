@@ -10,6 +10,18 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+_client = None
+
+def get_client():
+    """Lazily initialize and return the Model Armor client."""
+    global _client
+    if _client is None and modelarmor_v1:
+        try:
+            _client = modelarmor_v1.ModelArmorClient()
+        except Exception as e:
+            logger.error(f"Failed to initialize Model Armor client: {e}")
+    return _client
+
 def sanitize_text(text: str) -> str:
     """Sanitize the input text using GCP Model Armor."""
     if os.getenv("ENABLE_MODEL_ARMOR", "").lower() != "true":
@@ -29,9 +41,11 @@ def sanitize_text(text: str) -> str:
 
     template_name = f"projects/{project_id}/locations/{location}/templates/permit-guard-template"
 
-    try:
-        client = modelarmor_v1.ModelArmorClient()
+    client = get_client()
+    if not client:
+        return text
 
+    try:
         request = SanitizeUserPromptRequest(
             name=template_name,
             user_prompt_data=DataItem(
