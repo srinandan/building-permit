@@ -47,7 +47,7 @@ from google.cloud import bigquery
 
 import pypdf
 import io
-from model_armor import sanitize_text
+from model_armor import sanitize_text, ModelArmorBlockError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -374,8 +374,22 @@ Output ONLY the JSON object, with no preamble or markdown fences.
 
             if user_data_text:
                 # Sanitize only the user data text
-                sanitized_text = sanitize_text(user_data_text)
-                user_content_parts.append(Part(text=sanitized_text))
+                try:
+                    sanitized_text = sanitize_text(user_data_text)
+                    user_content_parts.append(Part(text=sanitized_text))
+                except ModelArmorBlockError as e:
+                    logger.warning(f"Model Armor blocked input: {e}")
+                    return {
+                        "status": "Rejected",
+                        "violations": [
+                            {
+                                "section": "Security Policy",
+                                "description": str(e),
+                                "suggestion": "Please review the document to ensure it complies with our safety and PII guidelines."
+                            }
+                        ],
+                        "approved_elements": []
+                    }
 
             new_message = Content(role="user", parts=user_content_parts)
 

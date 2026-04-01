@@ -10,6 +10,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+class ModelArmorBlockError(Exception):
+    """Raised when Model Armor blocks the input due to a policy violation."""
+    pass
+
 _client = None
 
 def get_client():
@@ -55,10 +59,55 @@ def sanitize_text(text: str) -> str:
 
         response = client.sanitize_user_prompt(request=request)
 
-        if response.sanitization_result and response.sanitization_result.sanitize_data_item:
-             return response.sanitization_result.sanitize_data_item.text
+        result = response.sanitization_result
+        if not result:
+            return text
 
-        # If no sanitized data is returned, return the original text
+        # Check for matched filters indicating a blocked state
+        matched_filters = []
+        if hasattr(result, "filter_results") and result.filter_results:
+             for filter_name, filter_result in result.filter_results.items():
+                 # Check if this specific filter triggered a match
+                 if hasattr(filter_result, "match_state") and filter_result.match_state.name == "MATCH_FOUND":
+                     matched_filters.append(filter_name.lower())
+
+        # You could also check result.filter_match_state == modelarmor_v1.FilterMatchState.MATCH_FOUND
+
+        if matched_filters:
+            logger.warning(f"Model Armor blocked input. Threats detected: {matched_filters}")
+
+            # Create user-friendly message based on threat type, tuned to the permit-guard-template
+            if 'pi_and_jailbreak' in matched_filters:
+                message = (
+                    "I apologize, but I cannot process this request. "
+                    "Your message appears to contain instructions that could "
+                    "compromise my safety guidelines or attempt a prompt injection. Please rephrase your question."
+                )
+            elif 'sdp' in matched_filters or 'custom_pii' in matched_filters or any('legal_liability' in f for f in matched_filters):
+                message = (
+                    "I apologize, but I cannot process this request. "
+                    "Your message contains sensitive information or attempts to solicit "
+                    "legal guarantees. I cannot provide legal liability or certify engineering advice. "
+                    "Please rephrase your question."
+                )
+            elif any(f.startswith('rai') for f in matched_filters):
+                message = (
+                    "I apologize, but I cannot respond to this type of request. "
+                    "Please rephrase your question in a respectful manner, and "
+                    "I'll be happy to help."
+                )
+            else:
+                message = (
+                    "I apologize, but I cannot process this request due to "
+                    "security or policy concerns. Please rephrase your question."
+                )
+
+            raise ModelArmorBlockError(message)
+
+        if result.sanitize_data_item:
+             return result.sanitize_data_item.text
+
+        # If no sanitized data is returned and no blocks occurred, return the original text
         return text
 
     except GoogleAPIError as e:
