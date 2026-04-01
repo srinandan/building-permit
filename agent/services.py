@@ -47,7 +47,7 @@ from google.cloud import bigquery
 
 import pypdf
 import io
-from model_armor import sanitize_text, ModelArmorBlockError
+from model_armor import create_model_armor_guard
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -127,6 +127,9 @@ class AIService:
             self.docai_processor_name = self.docai_client.processor_path(
                 self.project_id, self.docai_location, self.docai_processor_id
             )
+
+        # Initialize Model Armor Guard
+        self.model_armor_guard = create_model_armor_guard()
 
         # Find Registry Assets
         self.registry = AgentRegistry(
@@ -321,6 +324,8 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                     callback_context._invocation_context.session
                 )
 
+            before_model_cb = self.model_armor_guard.before_model_callback if self.model_armor_guard else None
+
             agent = LlmAgent(
                 name="plan_analyzer",
                 model=self.model_name,
@@ -328,6 +333,7 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                 tools=agent_tools,
                 sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
                 after_agent_callback=auto_save_session_to_memory_callback,
+                before_model_callback=before_model_cb,
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split("/")[-1]
@@ -373,23 +379,7 @@ Output ONLY the JSON object, with no preamble or markdown fences.
             ]
 
             if user_data_text:
-                # Sanitize only the user data text
-                try:
-                    sanitized_text = sanitize_text(user_data_text)
-                    user_content_parts.append(Part(text=sanitized_text))
-                except ModelArmorBlockError as e:
-                    logger.warning(f"Model Armor blocked input: {e}")
-                    return {
-                        "status": "Rejected",
-                        "violations": [
-                            {
-                                "section": "Security Policy",
-                                "description": str(e),
-                                "suggestion": "Please review the document to ensure it complies with our safety and PII guidelines."
-                            }
-                        ],
-                        "approved_elements": []
-                    }
+                user_content_parts.append(Part(text=user_data_text))
 
             new_message = Content(role="user", parts=user_content_parts)
 
