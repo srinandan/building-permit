@@ -47,6 +47,7 @@ from google.cloud import bigquery
 
 import pypdf
 import io
+from model_armor import sanitize_text
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -342,49 +343,33 @@ Output ONLY the JSON object, with no preamble or markdown fences.
             )
 
             # -----------------------------------------------------------------
-            # Pass BOTH the raw PDF bytes (multimodal visual inspection) AND the
-            # Document AI extracted text (clean, searchable text).  The agent can
-            # use whichever representation is most useful for each sub-task.
-            #
-            # Previously the extracted_text was only used to seed the manual RAG
-            # query.  Now it travels with the message so the agent can use it to
-            # formulate precise RAG queries (e.g. pulling out project metadata
-            # like project address, construction type, climate zone from the text
-            # and including them in retrieval queries).
+            # Combine user prompt components for sanitisation via Model Armor
             # -----------------------------------------------------------------
-            pdf_part = Part(inline_data=Blob(data=pdf_bytes, mime_type="application/pdf"))
+            base_prompt = "Please analyse the attached building plan document for compliance."
+            combined_text = base_prompt
 
-            user_content_parts = [
-                Part(text="Please analyse the attached building plan document for compliance."),
-                pdf_part,
-            ]
-
-            # Only attach extracted text if Document AI produced something useful
             if extracted_text and extracted_text.strip():
-                user_content_parts.append(
-                    Part(
-                        text=(
-                            f"{extracted_text[:8000]}"  # cap to avoid token overflow
-                        )
-                    )
-                )
+                combined_text += f"\n\nExtracted Text:\n{extracted_text[:8000]}"
 
-            # Extract PDF metadata and append it to the prompt
             try:
                 reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
                 metadata = reader.metadata
                 if metadata:
                     meta_text = "\n".join([f"{k}: {v}" for k, v in metadata.items() if v])
                     if meta_text:
-                        user_content_parts.append(
-                            Part(
-                                text=(
-                                    f"PDF Metadata:\n{meta_text}\n"
-                                )
-                            )
-                        )
+                        combined_text += f"\n\nPDF Metadata:\n{meta_text}"
             except Exception as e:
                 logger.warning(f"Failed to extract PDF metadata: {e}")
+
+            # Sanitize the combined text prompt
+            sanitized_text = sanitize_text(combined_text)
+
+            pdf_part = Part(inline_data=Blob(data=pdf_bytes, mime_type="application/pdf"))
+
+            user_content_parts = [
+                Part(text=sanitized_text),
+                pdf_part,
+            ]
 
             new_message = Content(role="user", parts=user_content_parts)
 

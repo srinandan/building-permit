@@ -9,6 +9,7 @@ dependencies = [
     "google-adk[a2a,otel-gcp]>=1.26.0",
     "google-cloud-aiplatform>=1.140.0",
     "google-cloud-documentai>=3.11.0",
+    "google-cloud-modelarmor>=0.5.0",
     "google-cloud-storage>=3.9.0",
     "google-genai>=1.66.0",
     "httpx>=0.28.1",

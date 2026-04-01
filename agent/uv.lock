@@ -116,6 +116,7 @@ dependencies = [
     { name = "google-adk", extra = ["a2a", "otel-gcp"] },
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-documentai" },
+    { name = "google-cloud-modelarmor" },
     { name = "google-cloud-storage" },
     { name = "google-genai" },
     { name = "httpx" },
@@ -139,6 +140,7 @@ requires-dist = [
     { name = "google-adk", extras = ["a2a", "otel-gcp"], specifier = ">=1.26.0" },
     { name = "google-cloud-aiplatform", specifier = ">=1.140.0" },
     { name = "google-cloud-documentai", specifier = ">=3.11.0" },
+    { name = "google-cloud-modelarmor", specifier = ">=0.5.0" },
     { name = "google-cloud-storage", specifier = ">=3.9.0" },
     { name = "google-genai", specifier = ">=1.66.0" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -731,6 +733,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9d/ce/0d3539008dc33b436e7c5c644abc8f8a7ec5900911d14a8e34e145f0ebe5/google_cloud_logging-3.14.0.tar.gz", hash = "sha256:361e83cd692fecc7da10351f641c474591f586f234fc49394db4ba5c8c5994a7", size = 293452, upload-time = "2026-03-06T21:53:07.526Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7b/3e/01795fc20f1b5f8b1d1d22eeb425c9c3396046f1761c4f6b4cc7d8dcab90/google_cloud_logging-3.14.0-py3-none-any.whl", hash = "sha256:4767ebdb3b46a3052d5185a7d5cf02829d33ea12a0aab1d57221110d581b9e1a", size = 232961, upload-time = "2026-03-06T21:52:48.393Z" },
+]
+
+[[package]]
+name = "google-cloud-modelarmor"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/1c/c698869c4be5c1a1f389aee19df31d78903fd2d07492e7d0725e4742f6ff/google_cloud_modelarmor-0.5.0.tar.gz", hash = "sha256:39e029bf79992b85da0642a4e94b3a7b97e63cc629e678458163fb2a1a9c18a7", size = 159142, upload-time = "2026-03-26T22:17:34.913Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/70/528cf6ff4b318d9284c80e47e0cebc88abde7a7f9c7e8078fe874ba57ff7/google_cloud_modelarmor-0.5.0-py3-none-any.whl", hash = "sha256:d03a8ecffaff8e7f536cc4f642371585ddc13fd26230a9a36f8167b6b3290a95", size = 138713, upload-time = "2026-03-26T22:13:06.309Z" },
 ]
 
 [[package]]

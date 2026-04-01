@@ -22,7 +22,7 @@ This repository implements an agentic AI system designed to automate the review 
 - **Contextual Retrieval:** Employs Vertex AI RAG Engine to retrieve relevant sections from the California Building Standards Code (Title 24) and San Paloma County local reach codes via a `FunctionTool` to ensure compatibility with multimodal interactions.
 - **Compliance Mapping:** Matches extracted plan data against retrieved regulatory text to identify specific violations or approved elements.
 - **Actionable Feedback:** Generates structured reports that include exact code sections, detailed descriptions of non-compliance, and specific suggestions for remediation.
-- **Model Armor (Safety & Liability):** Protects conversational interfaces from prompt injection, toxicity, and enforces custom PII filtering (e.g., blocking "LEGAL_LIABILITY_PHRASES") to ensure the agent does not assume legal liability or certify engineering advice.
+- **Model Armor (Safety & Liability):** Protects conversational interfaces and the primary plan analysis flow (`analyze_plan_with_gemini`) from prompt injection, toxicity, and enforces custom PII filtering (e.g., blocking "LEGAL_LIABILITY_PHRASES") to ensure the agent does not assume legal liability or certify engineering advice. It is configurable via the `ENABLE_MODEL_ARMOR` environment variable.
 
 ### Shared Infrastructure & Persistent Context
 - **Vertex AI Session Management:** Centralized session service for persistent, scalable conversation history across all agents in the ecosystem.

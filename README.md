@@ -110,7 +110,7 @@ For detailed setup, configuration, and individual execution of each component, r
 1. Open `http://localhost:3000` in your browser.
 2. Upload a sample PDF building plan.
 3. The frontend will send the PDF to the Go API, which forwards it to the Python Agent.
-4. The Python Agent will extract text using Document AI, query the RAG engine for relevant codes, and use Gemini to generate a compliance report.
+4. The Python Agent will extract text using Document AI, query the RAG engine for relevant codes, optionally sanitize user prompts with Model Armor (if `ENABLE_MODEL_ARMOR=true`), and use Gemini to generate a compliance report.
 5. The UI will display the results, including specific code violations and suggestions.
 
 ## Built With
