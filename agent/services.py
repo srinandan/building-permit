@@ -345,11 +345,13 @@ Output ONLY the JSON object, with no preamble or markdown fences.
             # -----------------------------------------------------------------
             # Combine user prompt components for sanitisation via Model Armor
             # -----------------------------------------------------------------
-            base_prompt = "Please analyse the attached building plan document for compliance."
-            combined_text = base_prompt
+            # Only user-provided data (extracted text, metadata) should be sanitized.
+            # System instructions/preambles should be kept separate.
+
+            user_data_text = ""
 
             if extracted_text and extracted_text.strip():
-                combined_text += f"\n\nExtracted Text:\n{extracted_text[:8000]}"
+                user_data_text += f"Extracted Text:\n{extracted_text[:8000]}"
 
             try:
                 reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
@@ -357,19 +359,23 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                 if metadata:
                     meta_text = "\n".join([f"{k}: {v}" for k, v in metadata.items() if v])
                     if meta_text:
-                        combined_text += f"\n\nPDF Metadata:\n{meta_text}"
+                        if user_data_text:
+                            user_data_text += "\n\n"
+                        user_data_text += f"PDF Metadata:\n{meta_text}"
             except Exception as e:
                 logger.warning(f"Failed to extract PDF metadata: {e}")
-
-            # Sanitize the combined text prompt
-            sanitized_text = sanitize_text(combined_text)
 
             pdf_part = Part(inline_data=Blob(data=pdf_bytes, mime_type="application/pdf"))
 
             user_content_parts = [
-                Part(text=sanitized_text),
+                Part(text="Please analyse the attached building plan document for compliance."),
                 pdf_part,
             ]
+
+            if user_data_text:
+                # Sanitize only the user data text
+                sanitized_text = sanitize_text(user_data_text)
+                user_content_parts.append(Part(text=sanitized_text))
 
             new_message = Content(role="user", parts=user_content_parts)
 
