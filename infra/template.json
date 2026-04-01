@@ -1,0 +1,32 @@
+{
+  "filterConfig": {
+    "raiSettings": {
+      "raiFilters": [
+        {
+          "filterType": "HARASSMENT",
+          "confidenceLevel": "MEDIUM_AND_ABOVE"
+        },
+        {
+          "filterType": "HATE_SPEECH",
+          "confidenceLevel": "MEDIUM_AND_ABOVE"
+        },
+        {
+          "filterType": "DANGEROUS",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        },
+        {
+          "filterType": "SEXUALLY_EXPLICIT",
+          "confidenceLevel": "HIGH"
+        }
+      ]
+    },
+    "sdpSettings": {
+      "advancedConfig": {
+        "inspectTemplate": "projects/YOUR_PROJECT/locations/us-central1/inspectTemplates/permit-liability-guard"
+      }
+    },
+    "piAndJailbreakFilterSettings": {
+      "filterEnforcement": "ENABLED"
+    }
+  }
+}
