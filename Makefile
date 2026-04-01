@@ -9,6 +9,7 @@ all:
 	@$(MAKE) assessor-mcp-server &
 	@wait # Optional: keeps the parent 'make' alive until all children finish
 
+
 install:
 	$(MAKE) -C frontend install
 	$(MAKE) -C api install

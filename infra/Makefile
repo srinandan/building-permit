@@ -41,4 +41,8 @@ onboard-contractor:
 	@echo "Onboarding Contractor Agent..."
 	python3 onboard_contractor_agent.py
 
+model-armor:
+	@echo "Setting up Model Armor..."
+	python3 setup_model_armor.py
+
 onboard: onboard-assessor onboard-contractor
