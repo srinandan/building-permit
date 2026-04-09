@@ -405,7 +405,7 @@ func GetPropertiesByEmailHandler(c *gin.Context) {
 	// Create a new client, with no features.
 	client := mcp.NewClient(&mcp.Implementation{Name: "mcp-client", Version: "v1.0.0"}, nil)
 	transport := &mcp.StreamableClientTransport{
-		Endpoint: assessorURL,
+		Endpoint:   assessorURL,
 		HTTPClient: agentHTTPClient,
 		MaxRetries: 3,
 	}
@@ -520,4 +520,3 @@ func GetMapDataHandler(c *gin.Context) {
 	// Fallback to returning raw result if no text content
 	c.JSON(http.StatusOK, result)
 }
-
