@@ -47,6 +47,7 @@ from google.cloud import bigquery
 
 import pypdf
 import io
+from model_armor import create_model_armor_guard
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -126,6 +127,9 @@ class AIService:
             self.docai_processor_name = self.docai_client.processor_path(
                 self.project_id, self.docai_location, self.docai_processor_id
             )
+
+        # Initialize Model Armor Guard
+        self.model_armor_guard = create_model_armor_guard()
 
         # Find Registry Assets
         self.registry = AgentRegistry(
@@ -320,6 +324,8 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                     callback_context._invocation_context.session
                 )
 
+            before_model_cb = self.model_armor_guard.before_model_callback if self.model_armor_guard else None
+
             agent = LlmAgent(
                 name="plan_analyzer",
                 model=self.model_name,
@@ -327,6 +333,7 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                 tools=agent_tools,
                 sub_agents=[self.registry.get_remote_a2a_agent(self.contractor_agent_name)],
                 after_agent_callback=auto_save_session_to_memory_callback,
+                before_model_callback=before_model_cb,
             )
 
             agent_engine_id = self.reasoning_engine_app_name.split("/")[-1]
@@ -342,16 +349,28 @@ Output ONLY the JSON object, with no preamble or markdown fences.
             )
 
             # -----------------------------------------------------------------
-            # Pass BOTH the raw PDF bytes (multimodal visual inspection) AND the
-            # Document AI extracted text (clean, searchable text).  The agent can
-            # use whichever representation is most useful for each sub-task.
-            #
-            # Previously the extracted_text was only used to seed the manual RAG
-            # query.  Now it travels with the message so the agent can use it to
-            # formulate precise RAG queries (e.g. pulling out project metadata
-            # like project address, construction type, climate zone from the text
-            # and including them in retrieval queries).
+            # Combine user prompt components for sanitisation via Model Armor
             # -----------------------------------------------------------------
+            # Only user-provided data (extracted text, metadata) should be sanitized.
+            # System instructions/preambles should be kept separate.
+
+            user_data_text = ""
+
+            if extracted_text and extracted_text.strip():
+                user_data_text += f"Extracted Text:\n{extracted_text[:8000]}"
+
+            try:
+                reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+                metadata = reader.metadata
+                if metadata:
+                    meta_text = "\n".join([f"{k}: {v}" for k, v in metadata.items() if v])
+                    if meta_text:
+                        if user_data_text:
+                            user_data_text += "\n\n"
+                        user_data_text += f"PDF Metadata:\n{meta_text}"
+            except Exception as e:
+                logger.warning(f"Failed to extract PDF metadata: {e}")
+
             pdf_part = Part(inline_data=Blob(data=pdf_bytes, mime_type="application/pdf"))
 
             user_content_parts = [
@@ -359,32 +378,8 @@ Output ONLY the JSON object, with no preamble or markdown fences.
                 pdf_part,
             ]
 
-            # Only attach extracted text if Document AI produced something useful
-            if extracted_text and extracted_text.strip():
-                user_content_parts.append(
-                    Part(
-                        text=(
-                            f"{extracted_text[:8000]}"  # cap to avoid token overflow
-                        )
-                    )
-                )
-
-            # Extract PDF metadata and append it to the prompt
-            try:
-                reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
-                metadata = reader.metadata
-                if metadata:
-                    meta_text = "\n".join([f"{k}: {v}" for k, v in metadata.items() if v])
-                    if meta_text:
-                        user_content_parts.append(
-                            Part(
-                                text=(
-                                    f"PDF Metadata:\n{meta_text}\n"
-                                )
-                            )
-                        )
-            except Exception as e:
-                logger.warning(f"Failed to extract PDF metadata: {e}")
+            if user_data_text:
+                user_content_parts.append(Part(text=user_data_text))
 
             new_message = Content(role="user", parts=user_content_parts)
 

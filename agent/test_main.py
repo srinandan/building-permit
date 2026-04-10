@@ -13,9 +13,15 @@
 # limitations under the License.
 
 import os
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from fastapi.testclient import TestClient
-from main import app
+
+# Mock Google Auth and AgentRegistry BEFORE importing the app
+mock_creds = MagicMock()
+mock_creds.universe_domain = "googleapis.com"
+with patch('google.auth.default', return_value=(mock_creds, "test-project")):
+    with patch('google.adk.integrations.agent_registry.AgentRegistry'):
+        from main import app
 
 client = TestClient(app)
 
