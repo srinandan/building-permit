@@ -14,7 +14,7 @@
 
 PROJECT_ID ?= $(shell gcloud config get-value project)
 PROJECT_NUMBER ?= $(shell gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-REGION ?= us-central1
+REGION ?= $(shell gcloud config get-value compute/region)
 
 .PHONY: install start clean deploy
 

@@ -1,6 +1,6 @@
 GOOGLE_CLOUD_PROJECT ?= $(shell gcloud config get-value project)
 GOOGLE_CLOUD_PROJECT_NUMBER ?= $(shell gcloud projects describe ${GOOGLE_CLOUD_PROJECT} --format="value(projectNumber)")
-GOOGLE_CLOUD_LOCATION ?= us-central1
+GOOGLE_CLOUD_LOCATION ?= $(shell gcloud config get-value compute/region)
 DOCUMENT_AI_LOCATION ?= us
 DOCUMENT_AI_PROCESSOR_ID=24ec41d66617b372
 ##NOTE: DO NOT change us-west1; us-central1 is not supported
