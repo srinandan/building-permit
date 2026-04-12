@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"google.golang.org/api/agentregistry/v1alpha"
