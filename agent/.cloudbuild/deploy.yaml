@@ -71,7 +71,7 @@ steps:
       - "--service-account"
       - "build-permit-sa@${PROJECT_ID}.iam.gserviceaccount.com"
       - "--set-env-vars"
-      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},DOCUMENT_AI_LOCATION=${_DOCUMENT_AI_LOCATION},DOCUMENT_AI_PROCESSOR_ID=${_DOCUMENT_AI_PROCESSOR_ID},VERTEX_RAG_CORPUS_NAME=projects/${PROJECT_ID}/locations/us-west1/ragCorpora/{_RAG_CORPORA},REASONING_ENGINE_APP_NAME=projects/${PROJECT_ID}/locations/${_REGION}/reasoningEngines/3166398874436763648,GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME},CONTRACTOR_AGENT_URL=https://building-permit-contractor-agent-${PROJECT_NUMBER}.${_REGION}.run.app/a2a/building_permit_contractor_agent/.well-known/agent-card.json,ASSESSOR_MCP_SERVER_URL=https://building-permit-assessor-mcp-${PROJECT_NUMBER}.${_REGION}.run.app/mcp,BQ_ANALYTICS_GCS_BUCKET=${PROJECT_ID},BQ_ANALYTICS_CONNECTION_ID=${PROJECT_ID}'
+      - 'GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_CLOUD_PROJECT=${PROJECT_ID},DOCUMENT_AI_LOCATION=${_DOCUMENT_AI_LOCATION},DOCUMENT_AI_PROCESSOR_ID=${_DOCUMENT_AI_PROCESSOR_ID},VERTEX_RAG_CORPUS_NAME=projects/${PROJECT_ID}/locations/us-west1/ragCorpora/{_RAG_CORPORA},REASONING_ENGINE_APP_NAME=projects/${PROJECT_ID}/locations/${_REGION}/reasoningEngines/${_REASONING_ENGINE_APP},GEMINI_MODEL_NAME=${_GEMINI_MODEL_NAME},CONTRACTOR_AGENT_URL=https://building-permit-contractor-agent-${PROJECT_NUMBER}.${_REGION}.run.app/a2a/building_permit_contractor_agent/.well-known/agent-card.json,ASSESSOR_MCP_SERVER_URL=https://building-permit-assessor-mcp-${PROJECT_NUMBER}.${_REGION}.run.app/mcp,BQ_ANALYTICS_GCS_BUCKET=${PROJECT_ID},BQ_ANALYTICS_CONNECTION_ID=${PROJECT_ID}'
       - "--startup-probe"
       - 'initialDelaySeconds=30,tcpSocket.port=8080,timeoutSeconds=240,periodSeconds=240,failureThreshold=1'
       - "--min-instances"
@@ -97,6 +97,7 @@ substitutions:
   _DOCUMENT_AI_LOCATION: us
   _DOCUMENT_AI_PROCESSOR_ID: 24ec41d66617b372
   _RAG_CORPORA: "4611686018427387904"
+  _REASONING_ENGINE_APP: "3166398874436763648"
   _GEMINI_MODEL_NAME: gemini-2.5-pro
 
 images:
