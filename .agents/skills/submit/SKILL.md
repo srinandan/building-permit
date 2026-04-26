@@ -136,3 +136,7 @@ Open a pull request with:
 - [ ] MCP tool signatures unchanged (or all callers updated)
 - [ ] A2A agent card updated if endpoint paths changed
 - [ ] Model Armor filter lists not weakened
+- [ ] Followed "Think Before Coding" (stated assumptions, asked if uncertain)
+- [ ] Followed "Simplicity First" (no speculative code)
+- [ ] Followed "Surgical Changes" (touched only what was required)
+- [ ] Followed "Goal-Driven Execution" (defined success criteria)
